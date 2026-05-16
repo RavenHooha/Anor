@@ -123,7 +123,7 @@ export default function HomeScreen() {
         }
       >
         <View style={styles.headerRow}>
-          <Text style={styles.brand}>nigh</Text>
+          <Text style={styles.brand}>anor</Text>
           <Pressable
             onPress={() => navigation.navigate('Main', { screen: 'Threads' })}
             hitSlop={8}

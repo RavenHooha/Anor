@@ -26,7 +26,7 @@ begin
       url := 'https://exp.host/--/api/v2/push/send',
       body := jsonb_build_object(
         'to', tok,
-        'title', coalesce(sender_name, 'Nigh'),
+        'title', coalesce(sender_name, 'Anor'),
         'body', new.body,
         'sound', 'default',
         'data', jsonb_build_object('threadId', new.thread_id::text, 'kind', 'message')
@@ -66,7 +66,7 @@ begin
       url := 'https://exp.host/--/api/v2/push/send',
       body := jsonb_build_object(
         'to', tok,
-        'title', coalesce(sender_name, 'Nigh'),
+        'title', coalesce(sender_name, 'Anor'),
         'body', body_text,
         'sound', 'default',
         'data', jsonb_build_object('threadId', new.id::text, 'kind', 'thread')

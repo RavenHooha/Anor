@@ -71,7 +71,7 @@ export async function startBle(): Promise<void> {
     throw e;
   }
 
-  // Advertise: be discoverable as an Nigh device.
+  // Advertise: be discoverable as an Anor device.
   try {
     BLEAdvertiser.setCompanyId(EMBER_COMPANY_ID);
     await BLEAdvertiser.broadcast(EMBER_SERVICE_UUID, [], {
@@ -85,7 +85,7 @@ export async function startBle(): Promise<void> {
     // Scan still works.
   }
 
-  // Scan: listen for other Nigh devices via ble-manager's typed event helper.
+  // Scan: listen for other Anor devices via ble-manager's typed event helper.
   scanSubscription = BleManager.onDiscoverPeripheral((data) => {
     if (typeof data?.rssi !== 'number' || !data?.id) return;
     recordSample(data.id, data.rssi);

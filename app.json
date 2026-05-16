@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Nigh",
+    "name": "Anor",
     "slug": "Ember",
     "scheme": "ember",
     "version": "1.0.0",
@@ -41,7 +41,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Nigh uses your photos so you can pick a profile picture."
+          "photosPermission": "Anor uses your photos so you can pick a profile picture."
         }
       ],
       [
@@ -49,13 +49,13 @@
         {
           "isBackgroundEnabled": false,
           "neverForLocation": true,
-          "bluetoothAlwaysPermission": "Nigh uses Bluetooth to find other Nigh users near you."
+          "bluetoothAlwaysPermission": "Anor uses Bluetooth to find other Anor users near you."
         }
       ],
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Nigh uses your location to find people nearby."
+          "locationWhenInUsePermission": "Anor uses your location to find people nearby."
         }
       ],
       [
