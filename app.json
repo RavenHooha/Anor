@@ -53,6 +53,13 @@
         {
           "locationWhenInUsePermission": "Ember uses your location to find people nearby."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#ff6b35",
+          "androidMode": "default"
+        }
       ]
     ]
   }

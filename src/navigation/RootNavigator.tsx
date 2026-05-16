@@ -1,4 +1,8 @@
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  DarkTheme,
+  createNavigationContainerRef,
+} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AuthScreen from '../screens/AuthScreen';
 import OnboardingNameScreen from '../screens/OnboardingNameScreen';
@@ -12,6 +16,8 @@ import { colors } from '../theme';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 const navTheme = {
   ...DarkTheme,
@@ -33,7 +39,7 @@ type Props = {
 
 export default function RootNavigator({ isAuthed, hasProfile }: Props) {
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer ref={navigationRef} theme={navTheme}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,

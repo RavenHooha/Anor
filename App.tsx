@@ -2,11 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import RootNavigator from './src/navigation/RootNavigator';
+import RootNavigator, { navigationRef } from './src/navigation/RootNavigator';
 import { useSession } from './src/auth/useSession';
 import { startAuthLinkListener } from './src/auth/deepLink';
 import { ProfileGateProvider } from './src/auth/profileGate';
 import { getMyProfile } from './src/storage/profile';
+import {
+  onNotificationTap,
+  setupPushNotifications,
+} from './src/notifications/setup';
 import { colors } from './src/theme';
 
 export default function App() {
@@ -15,6 +19,21 @@ export default function App() {
 
   useEffect(() => {
     return startAuthLinkListener();
+  }, []);
+
+  // Register push token once we know who the user is.
+  useEffect(() => {
+    if (session) setupPushNotifications().catch(() => {});
+  }, [session]);
+
+  // Tap on a notification → navigate to the relevant Chat thread.
+  useEffect(() => {
+    return onNotificationTap((data) => {
+      const threadId = typeof data?.threadId === 'string' ? data.threadId : null;
+      if (threadId && navigationRef.isReady()) {
+        navigationRef.navigate('Chat', { threadId });
+      }
+    });
   }, []);
 
   const refreshProfile = useCallback(async () => {
