@@ -22,8 +22,10 @@ let registered = false;
 export async function setupPushNotifications(): Promise<void> {
   if (registered) return;
 
-  if (!Device.isDevice) {
-    console.warn('[push] Skipping — emulator/simulator without Play Services or running in web');
+  // iOS Simulator can't receive push (no APNS). Android emulators with
+  // Play Services can — don't bail on Android.
+  if (Platform.OS === 'ios' && !Device.isDevice) {
+    console.warn('[push] Skipping — iOS Simulator can\'t receive push');
     return;
   }
 

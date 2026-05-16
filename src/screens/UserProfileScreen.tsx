@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
@@ -6,7 +6,7 @@ import { STATUS_BY_ID } from '../types/status';
 import MessageComposerModal from '../components/MessageComposerModal';
 import InterestChips from '../components/InterestChips';
 import PhotoGalleryViewer from '../components/PhotoGalleryViewer';
-import { createOrGetThread } from '../storage/threads';
+import { createOrGetThread, findExistingThread } from '../storage/threads';
 import { blockUser } from '../storage/blocks';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
@@ -19,7 +19,12 @@ export default function UserProfileScreen({ route, navigation }: Props) {
 
   const [composerOpen, setComposerOpen] = useState(false);
   const [pending, setPending] = useState<'wave' | 'message' | null>(null);
+  const [existingThreadId, setExistingThreadId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    findExistingThread(user.id).then(setExistingThreadId);
+  }, [user.id]);
 
   const openChat = (threadId: string) => {
     navigation.replace('Chat', { threadId });
@@ -99,7 +104,13 @@ export default function UserProfileScreen({ route, navigation }: Props) {
         </Pressable>
 
         <Pressable
-          onPress={() => setComposerOpen(true)}
+          onPress={() => {
+            if (existingThreadId) {
+              navigation.replace('Chat', { threadId: existingThreadId });
+            } else {
+              setComposerOpen(true);
+            }
+          }}
           disabled={!!pending}
           style={({ pressed }) => [
             styles.actionBtn,
@@ -107,9 +118,17 @@ export default function UserProfileScreen({ route, navigation }: Props) {
             pressed && !pending && styles.messageBtnPressed,
           ]}
         >
-          <Ionicons name="paper-plane-outline" size={20} color={colors.background} />
+          <Ionicons
+            name={existingThreadId ? 'chatbubble-outline' : 'paper-plane-outline'}
+            size={20}
+            color={colors.background}
+          />
           <Text style={[styles.actionLabel, { color: colors.background }]}>
-            {messageBusy ? 'Sending…' : 'Message'}
+            {messageBusy
+              ? 'Sending…'
+              : existingThreadId
+                ? 'Open chat'
+                : 'Message'}
           </Text>
         </Pressable>
       </View>

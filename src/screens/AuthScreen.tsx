@@ -68,7 +68,7 @@ export default function AuthScreen() {
             <View style={styles.logoWrap}>
               <Ionicons name="flame" size={48} color={colors.primary} />
             </View>
-            <Text style={styles.brand}>ember</Text>
+            <Text style={styles.brand}>nigh</Text>
             <Text style={styles.tagline}>Real connections. Made simple.</Text>
           </View>
 

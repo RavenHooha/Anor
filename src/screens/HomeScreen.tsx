@@ -16,6 +16,7 @@ import { fetchNearby, DEFAULT_RADIUS_M, RADIUS_PRESETS } from '../data/nearby';
 import { createOrGetThread } from '../storage/threads';
 import { useBleNearby } from '../ble/useBleNearby';
 import { useLocation } from '../location/useLocation';
+import { reverseGeocodeArea, type AreaNames } from '../location/location';
 import type { Status } from '../types/status';
 import type { NearbyUser } from '../types/user';
 import type { RootStackParamList } from '../navigation/types';
@@ -28,6 +29,7 @@ export default function HomeScreen() {
   const [radiusM, setRadiusM] = useState<number>(DEFAULT_RADIUS_M);
   const [nearby, setNearby] = useState<NearbyUser[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [areaNames, setAreaNames] = useState<AreaNames | null>(null);
   const navigation = useNavigation<Nav>();
 
   const { status: bleStatus, devices: bleDevices, retry: retryBle } = useBleNearby();
@@ -54,6 +56,11 @@ export default function HomeScreen() {
   useEffect(() => {
     loadNearby();
   }, [loadNearby]);
+
+  useEffect(() => {
+    if (!coords) return;
+    reverseGeocodeArea(coords).then(setAreaNames);
+  }, [coords]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -92,6 +99,16 @@ export default function HomeScreen() {
   const isFocus = status === 'focus';
   const totalNearby = nearby.length + bleDevices.length;
 
+  const preset = RADIUS_PRESETS.find((p) => p.meters === radiusM);
+  const presetId = preset?.id ?? 'here';
+  const areaName = (() => {
+    if (presetId === 'country') return areaNames?.country ?? preset?.label.toLowerCase();
+    if (presetId === 'region') return areaNames?.region ?? preset?.label.toLowerCase();
+    if (presetId === 'city') return areaNames?.city ?? preset?.label.toLowerCase();
+    // here / walking → reuse city if known, otherwise generic
+    return areaNames?.city ?? preset?.label.toLowerCase();
+  })();
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView
@@ -106,7 +123,7 @@ export default function HomeScreen() {
         }
       >
         <View style={styles.headerRow}>
-          <Text style={styles.brand}>ember</Text>
+          <Text style={styles.brand}>nigh</Text>
           <Pressable
             onPress={() => navigation.navigate('Main', { screen: 'Threads' })}
             hitSlop={8}
@@ -122,32 +139,30 @@ export default function HomeScreen() {
 
         <RadiusSelector current={radiusM} onChange={onChangeRadius} />
 
+        {isFocus ? (
+          <Text style={styles.feedNote}>
+            Focus mode is on. The feed is paused.
+          </Text>
+        ) : totalNearby === 0 ? (
+          <Text style={styles.feedNote}>
+            {coords
+              ? `No one within ${areaName ?? 'range'} yet. Pull to refresh or widen the radius.`
+              : 'Waiting on your location…'}
+          </Text>
+        ) : (
+          <View style={styles.countRow}>
+            <Ionicons name="people-outline" size={14} color={colors.textMuted} />
+            <Text style={styles.feedNote}>
+              {totalNearby} {totalNearby === 1 ? 'person' : 'people'} within{' '}
+              {areaName ?? 'range'}
+            </Text>
+          </View>
+        )}
+
         <LocationBanner status={locStatus} onRetry={retryLoc} />
         <BleBanner status={bleStatus} onRetry={retryBle} />
 
         <View style={[styles.feed, isFocus && styles.feedDimmed]}>
-          {isFocus ? (
-            <Text style={styles.feedNote}>
-              Focus mode is on. The feed is paused.
-            </Text>
-          ) : totalNearby === 0 ? (
-            <Text style={styles.feedNote}>
-              {coords
-                ? `No one within ${
-                    RADIUS_PRESETS.find((p) => p.meters === radiusM)?.label.toLowerCase() ?? 'range'
-                  } yet. Pull to refresh or widen the radius.`
-                : 'Waiting on your location…'}
-            </Text>
-          ) : (
-            <View style={styles.countRow}>
-              <Ionicons name="people-outline" size={14} color={colors.textMuted} />
-              <Text style={styles.feedNote}>
-                {totalNearby} {totalNearby === 1 ? 'person' : 'people'} within{' '}
-                {RADIUS_PRESETS.find((p) => p.meters === radiusM)?.label.toLowerCase() ?? 'range'}
-              </Text>
-            </View>
-          )}
-
           <View style={styles.grid}>
             {bleDevices.map((d) => (
               <MysteryCard key={`ble:${d.id}`} signal={d.signal} />

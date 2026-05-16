@@ -52,6 +52,30 @@ export async function watchLocation(
   return () => sub.remove();
 }
 
+export type AreaNames = {
+  city: string | null;
+  region: string | null;
+  country: string | null;
+};
+
+export async function reverseGeocodeArea(coords: LocationCoords): Promise<AreaNames> {
+  try {
+    const results = await Location.reverseGeocodeAsync({
+      latitude: coords.lat,
+      longitude: coords.lng,
+    });
+    const r = results[0];
+    if (!r) return { city: null, region: null, country: null };
+    return {
+      city: r.city ?? r.subregion ?? null,
+      region: r.region ?? null,
+      country: r.country ?? null,
+    };
+  } catch {
+    return { city: null, region: null, country: null };
+  }
+}
+
 export async function pushPresenceLocation(coords: LocationCoords): Promise<void> {
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData.user?.id;

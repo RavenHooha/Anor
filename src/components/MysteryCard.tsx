@@ -22,7 +22,7 @@ export default function MysteryCard({ signal }: Props) {
       </View>
       <View style={styles.body}>
         <Text style={styles.name} numberOfLines={1}>
-          Ember nearby
+          Nigh nearby
         </Text>
         <View style={styles.statusRow}>
           <Ionicons name="radio-outline" size={14} color={colors.highlight} />

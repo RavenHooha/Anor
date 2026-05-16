@@ -39,7 +39,7 @@ export default function RadiusSelector({ current, onChange }: Props) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: spacing.xs },
+  wrap: { gap: spacing.sm },
   heading: { ...typography.caption, color: colors.textMuted },
   row: { flexDirection: 'row', gap: spacing.xs },
   chip: {

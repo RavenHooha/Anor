@@ -51,6 +51,26 @@ export async function createOrGetThread(
   return data;
 }
 
+/**
+ * Look up an existing thread with another user without creating one.
+ * Returns null if no thread exists yet.
+ */
+export async function findExistingThread(otherUserId: string): Promise<string | null> {
+  const { data: userData } = await supabase.auth.getUser();
+  const me = userData.user?.id;
+  if (!me) return null;
+  const a = me < otherUserId ? me : otherUserId;
+  const b = me < otherUserId ? otherUserId : me;
+  const { data, error } = await supabase
+    .from('threads')
+    .select('id')
+    .eq('user_a', a)
+    .eq('user_b', b)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data.id;
+}
+
 export async function listMyThreads(): Promise<ThreadSummary[]> {
   const { data, error } = await supabase.rpc('list_my_threads');
   if (error) throw error;
