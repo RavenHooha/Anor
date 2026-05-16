@@ -1,0 +1,135 @@
+import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, spacing, radius, typography } from '../theme';
+import { STATUS_BY_ID } from '../types/status';
+import type { NearbyUser } from '../types/user';
+
+type Props = {
+  user: NearbyUser;
+  onPress: (user: NearbyUser) => void;
+  onMessage?: (user: NearbyUser) => void;
+};
+
+function formatDistance(m: number): string {
+  if (m < 1000) return `${Math.round(m)} m`;
+  const km = m / 1000;
+  return km < 10 ? `${km.toFixed(1)} km` : `${Math.round(km)} km`;
+}
+
+export default function NearbyCard({ user, onPress, onMessage }: Props) {
+  const cfg = STATUS_BY_ID[user.status];
+  const isFocus = user.status === 'focus';
+
+  const metaParts: string[] = [];
+  if (user.age != null) metaParts.push(String(user.age));
+  metaParts.push(formatDistance(user.distanceM));
+  const meta = metaParts.join(' · ');
+
+  return (
+    <Pressable
+      onPress={() => onPress(user)}
+      disabled={isFocus}
+      style={({ pressed }) => [
+        styles.card,
+        isFocus && styles.cardFocus,
+        pressed && !isFocus && styles.cardPressed,
+      ]}
+    >
+      <View style={styles.photoWrap}>
+        <Image source={{ uri: user.photoUrl }} style={styles.photo} />
+        <View style={[styles.statusDot, { backgroundColor: cfg.color }]} />
+      </View>
+      <View style={styles.body}>
+        <View style={styles.headRow}>
+          <Text style={styles.name} numberOfLines={1}>
+            {user.name}
+          </Text>
+        </View>
+        <View style={styles.statusRow}>
+          <Ionicons name={cfg.icon} size={14} color={cfg.color} />
+          <Text style={[styles.statusLabel, { color: cfg.color }]}>{cfg.label}</Text>
+        </View>
+        {user.bio.length > 0 && (
+          <Text style={styles.bio} numberOfLines={2}>
+            {user.bio}
+          </Text>
+        )}
+        {meta.length > 0 && <Text style={styles.meta}>{meta}</Text>}
+      </View>
+      {!isFocus && onMessage && (
+        <Pressable
+          onPress={(e) => {
+            e.stopPropagation?.();
+            onMessage(user);
+          }}
+          hitSlop={8}
+          style={({ pressed }) => [
+            styles.chatBtn,
+            pressed && styles.chatBtnPressed,
+          ]}
+        >
+          <Ionicons name="chatbubble-outline" size={20} color={colors.primary} />
+        </Pressable>
+      )}
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: {
+    width: '100%',
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  cardPressed: { borderColor: colors.primary },
+  cardFocus: { opacity: 0.4 },
+  photoWrap: { position: 'relative' },
+  photo: {
+    width: 110,
+    height: 110,
+    backgroundColor: colors.surfaceElevated,
+  },
+  statusDot: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.surface,
+  },
+  body: {
+    flex: 1,
+    padding: spacing.md,
+    gap: 2,
+    justifyContent: 'center',
+  },
+  headRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  name: { ...typography.title, fontSize: 17, flex: 1 },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  statusLabel: { ...typography.caption, fontWeight: '600' },
+  bio: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+    marginTop: 2,
+  },
+  meta: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  chatBtn: {
+    width: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderLeftWidth: 1,
+    borderLeftColor: colors.border,
+  },
+  chatBtnPressed: { backgroundColor: colors.surfaceElevated },
+});

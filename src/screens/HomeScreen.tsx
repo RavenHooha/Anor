@@ -1,0 +1,278 @@
+import { useCallback, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, spacing, radius, typography } from '../theme';
+import StatusSelector from '../components/StatusSelector';
+import StatusBadge from '../components/StatusBadge';
+import NearbyCard from '../components/NearbyCard';
+import MysteryCard from '../components/MysteryCard';
+import RadiusSelector from '../components/RadiusSelector';
+import { loadStatus, saveStatus } from '../storage/status';
+import { loadRadius, saveRadius } from '../storage/radius';
+import { fetchNearby, DEFAULT_RADIUS_M, RADIUS_PRESETS } from '../data/nearby';
+import { createOrGetThread } from '../storage/threads';
+import { useBleNearby } from '../ble/useBleNearby';
+import { useLocation } from '../location/useLocation';
+import type { Status } from '../types/status';
+import type { NearbyUser } from '../types/user';
+import type { RootStackParamList } from '../navigation/types';
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+export default function HomeScreen() {
+  const [status, setStatus] = useState<Status | null>(null);
+  const [statusLoaded, setStatusLoaded] = useState(false);
+  const [radiusM, setRadiusM] = useState<number>(DEFAULT_RADIUS_M);
+  const [nearby, setNearby] = useState<NearbyUser[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const navigation = useNavigation<Nav>();
+
+  const { status: bleStatus, devices: bleDevices, retry: retryBle } = useBleNearby();
+  const { status: locStatus, coords, retry: retryLoc } = useLocation();
+
+  useEffect(() => {
+    loadStatus().then((s) => {
+      setStatus(s);
+      setStatusLoaded(true);
+    });
+    loadRadius().then(setRadiusM);
+  }, []);
+
+  const loadNearby = useCallback(async () => {
+    if (!coords) return;
+    try {
+      const users = await fetchNearby(coords, radiusM);
+      setNearby(users);
+    } catch {
+      // ignore — banner state covers errors
+    }
+  }, [coords, radiusM]);
+
+  useEffect(() => {
+    loadNearby();
+  }, [loadNearby]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadNearby();
+    setRefreshing(false);
+  };
+
+  const onChange = (next: Status) => {
+    setStatus(next);
+    saveStatus(next).catch(() => {});
+  };
+
+  const onChangeRadius = (m: number) => {
+    setRadiusM(m);
+    saveRadius(m).catch(() => {});
+  };
+
+  const openProfile = (user: NearbyUser) => {
+    navigation.navigate('UserProfile', { user });
+  };
+
+  const quickMessage = async (user: NearbyUser) => {
+    try {
+      const threadId = await createOrGetThread(user.id, null);
+      navigation.navigate('Chat', { threadId });
+    } catch {
+      // fall back to opening their profile
+      navigation.navigate('UserProfile', { user });
+    }
+  };
+
+  if (!statusLoaded) {
+    return <SafeAreaView style={styles.safe} edges={['top']} />;
+  }
+
+  const isFocus = status === 'focus';
+  const totalNearby = nearby.length + bleDevices.length;
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+          />
+        }
+      >
+        <View style={styles.headerRow}>
+          <Text style={styles.brand}>ember</Text>
+          <Pressable
+            onPress={() => navigation.navigate('Main', { screen: 'Threads' })}
+            hitSlop={8}
+            style={({ pressed }) => [styles.bellBtn, pressed && { opacity: 0.6 }]}
+          >
+            <Ionicons name="notifications-outline" size={22} color={colors.textSecondary} />
+          </Pressable>
+        </View>
+
+        <StatusBadge status={status} />
+
+        <StatusSelector current={status} onChange={onChange} />
+
+        <RadiusSelector current={radiusM} onChange={onChangeRadius} />
+
+        <LocationBanner status={locStatus} onRetry={retryLoc} />
+        <BleBanner status={bleStatus} onRetry={retryBle} />
+
+        <View style={[styles.feed, isFocus && styles.feedDimmed]}>
+          {isFocus ? (
+            <Text style={styles.feedNote}>
+              Focus mode is on. The feed is paused.
+            </Text>
+          ) : totalNearby === 0 ? (
+            <Text style={styles.feedNote}>
+              {coords
+                ? `No one within ${
+                    RADIUS_PRESETS.find((p) => p.meters === radiusM)?.label.toLowerCase() ?? 'range'
+                  } yet. Pull to refresh or widen the radius.`
+                : 'Waiting on your location…'}
+            </Text>
+          ) : (
+            <View style={styles.countRow}>
+              <Ionicons name="people-outline" size={14} color={colors.textMuted} />
+              <Text style={styles.feedNote}>
+                {totalNearby} {totalNearby === 1 ? 'person' : 'people'} within{' '}
+                {RADIUS_PRESETS.find((p) => p.meters === radiusM)?.label.toLowerCase() ?? 'range'}
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.grid}>
+            {bleDevices.map((d) => (
+              <MysteryCard key={`ble:${d.id}`} signal={d.signal} />
+            ))}
+            {nearby.map((u) => (
+              <NearbyCard
+                key={u.id}
+                user={u}
+                onPress={openProfile}
+                onMessage={quickMessage}
+              />
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function LocationBanner({
+  status,
+  onRetry,
+}: {
+  status: ReturnType<typeof useLocation>['status'];
+  onRetry: () => void;
+}) {
+  if (status === 'tracking' || status === 'idle' || status === 'requesting') return null;
+
+  const message =
+    status === 'denied'
+      ? 'Location permission denied. Tap to retry.'
+      : 'Could not get your location. Tap to retry.';
+
+  return (
+    <Pressable
+      onPress={onRetry}
+      style={({ pressed }) => [styles.banner, pressed && { opacity: 0.7 }]}
+    >
+      <Text style={styles.bannerText}>{message}</Text>
+    </Pressable>
+  );
+}
+
+function BleBanner({
+  status,
+  onRetry,
+}: {
+  status: ReturnType<typeof useBleNearby>['status'];
+  onRetry: () => void;
+}) {
+  if (status === 'scanning' || status === 'idle' || status === 'requesting') return null;
+
+  const message =
+    status === 'denied'
+      ? 'Bluetooth permission denied. Tap to retry.'
+      : status === 'unsupported'
+        ? 'Bluetooth proximity is Android-only for now.'
+        : "Couldn't start Bluetooth. Tap to retry.";
+
+  const tappable = status === 'denied' || status === 'error';
+
+  return (
+    <Pressable
+      onPress={tappable ? onRetry : undefined}
+      style={({ pressed }) => [
+        styles.banner,
+        pressed && tappable && { opacity: 0.7 },
+      ]}
+    >
+      <Text style={styles.bannerText}>{message}</Text>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.background },
+  scroll: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xl,
+    gap: spacing.md,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  brand: {
+    fontSize: 30,
+    fontWeight: '700',
+    color: colors.primary,
+    letterSpacing: -0.5,
+  },
+  bellBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  countRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  heading: { ...typography.display, color: colors.secondary },
+  feed: {
+    marginTop: spacing.md,
+    gap: spacing.md,
+  },
+  feedDimmed: { opacity: 0.35 },
+  feedNote: { ...typography.caption },
+  grid: {
+    gap: spacing.md,
+  },
+  banner: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  bannerText: { ...typography.caption, color: colors.textSecondary },
+});

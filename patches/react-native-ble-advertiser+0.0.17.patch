@@ -1,0 +1,63 @@
+diff --git a/node_modules/react-native-ble-advertiser/android/build.gradle b/node_modules/react-native-ble-advertiser/android/build.gradle
+index 2526548..51dcd58 100644
+--- a/node_modules/react-native-ble-advertiser/android/build.gradle
++++ b/node_modules/react-native-ble-advertiser/android/build.gradle
+@@ -1,12 +1,16 @@
++def safeExtGet(prop, fallback) {
++    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
++}
++
+ apply plugin: 'com.android.library'
+ 
+ android {
+-    compileSdkVersion 28
+-    buildToolsVersion "28.0.3"
++    namespace "com.vitorpamplona.bleadvertiser"
++    compileSdkVersion safeExtGet('compileSdkVersion', 34)
+ 
+     defaultConfig {
+-        minSdkVersion 21
+-        targetSdkVersion 28
++        minSdkVersion safeExtGet('minSdkVersion', 24)
++        targetSdkVersion safeExtGet('targetSdkVersion', 34)
+         versionCode 1
+         versionName "1.0"
+     }
+@@ -15,4 +19,3 @@ android {
+ dependencies {
+     implementation 'com.facebook.react:react-native:+'
+ }
+-
+diff --git a/node_modules/react-native-ble-advertiser/android/src/main/AndroidManifest.xml b/node_modules/react-native-ble-advertiser/android/src/main/AndroidManifest.xml
+index 5246db1..a2f47b6 100644
+--- a/node_modules/react-native-ble-advertiser/android/src/main/AndroidManifest.xml
++++ b/node_modules/react-native-ble-advertiser/android/src/main/AndroidManifest.xml
+@@ -1,7 +1,2 @@
+-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+-          package="com.vitorpamplona.bleavertiser">
+-          <uses-permission android:name="android.permission.BLUETOOTH" />
+-          <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+-          <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+-          <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
++<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+ </manifest>
+diff --git a/node_modules/react-native-ble-advertiser/android/src/main/java/com/vitorpamplona/bleadvertiser/BLEAdvertiserModule.java b/node_modules/react-native-ble-advertiser/android/src/main/java/com/vitorpamplona/bleadvertiser/BLEAdvertiserModule.java
+index 036de18..c0f5d83 100644
+--- a/node_modules/react-native-ble-advertiser/android/src/main/java/com/vitorpamplona/bleadvertiser/BLEAdvertiserModule.java
++++ b/node_modules/react-native-ble-advertiser/android/src/main/java/com/vitorpamplona/bleadvertiser/BLEAdvertiserModule.java
+@@ -1,4 +1,4 @@
+-package com.vitorpamplona.bleavertiser;
++package com.vitorpamplona.bleadvertiser;
+ 
+ import com.facebook.react.uimanager.*;
+ import com.facebook.react.bridge.*;
+diff --git a/node_modules/react-native-ble-advertiser/android/src/main/java/com/vitorpamplona/bleadvertiser/BLEAdvertiserPackage.java b/node_modules/react-native-ble-advertiser/android/src/main/java/com/vitorpamplona/bleadvertiser/BLEAdvertiserPackage.java
+index 483e522..746ce59 100644
+--- a/node_modules/react-native-ble-advertiser/android/src/main/java/com/vitorpamplona/bleadvertiser/BLEAdvertiserPackage.java
++++ b/node_modules/react-native-ble-advertiser/android/src/main/java/com/vitorpamplona/bleadvertiser/BLEAdvertiserPackage.java
+@@ -1,4 +1,4 @@
+-package com.vitorpamplona.bleavertiser;
++package com.vitorpamplona.bleadvertiser;
+ 
+ import java.util.Arrays;
+ import java.util.Collections;
