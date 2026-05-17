@@ -8,12 +8,14 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { colors, spacing, radius, typography } from '../theme';
 import StepIndicator from '../components/StepIndicator';
+import { TOS_URL, PRIVACY_POLICY_URL } from '../lib/links';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -102,7 +104,21 @@ export default function OnboardingNameScreen({ navigation }: Props) {
               )}
             </View>
             <Text style={styles.tosText}>
-              I'm 18 or older and agree to Anor's terms of use.
+              I'm 18 or older and agree to Anor's{' '}
+              <Text
+                style={styles.linkText}
+                onPress={() => Linking.openURL(TOS_URL)}
+              >
+                terms of use
+              </Text>
+              {' '}and{' '}
+              <Text
+                style={styles.linkText}
+                onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
+              >
+                privacy policy
+              </Text>
+              .
             </Text>
           </Pressable>
 
@@ -204,6 +220,10 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textSecondary,
     flex: 1,
+  },
+  linkText: {
+    color: colors.primary,
+    textDecorationLine: 'underline',
   },
   spacer: { flex: 1 },
   cta: {

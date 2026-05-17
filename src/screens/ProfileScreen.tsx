@@ -8,6 +8,7 @@ import {
   ScrollView,
   Switch,
   Alert,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -23,6 +24,7 @@ import {
   type Profile,
 } from '../storage/profile';
 import { supabase } from '../lib/supabase';
+import { TOS_URL, PRIVACY_POLICY_URL, supportMailto } from '../lib/links';
 import type { RootStackParamList } from '../navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -201,6 +203,30 @@ export default function ProfileScreen() {
             thumbColor={colors.textPrimary}
           />
         </View>
+
+        <Pressable
+          onPress={() => Linking.openURL(supportMailto())}
+          style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.6 }]}
+        >
+          <Text style={styles.linkLabel}>Contact support</Text>
+          <Ionicons name="open-outline" size={16} color={colors.textMuted} />
+        </Pressable>
+
+        <Pressable
+          onPress={() => Linking.openURL(TOS_URL)}
+          style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.6 }]}
+        >
+          <Text style={styles.linkLabel}>Terms of use</Text>
+          <Ionicons name="open-outline" size={16} color={colors.textMuted} />
+        </Pressable>
+
+        <Pressable
+          onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
+          style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.6 }]}
+        >
+          <Text style={styles.linkLabel}>Privacy policy</Text>
+          <Ionicons name="open-outline" size={16} color={colors.textMuted} />
+        </Pressable>
 
         <Pressable
           onPress={onSignOut}
