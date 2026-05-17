@@ -17,6 +17,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
 import InterestChips from '../components/InterestChips';
+import FoundingBadge from '../components/FoundingBadge';
+import { isFoundingMember } from '../lib/founding';
 import {
   getMyProfile,
   setHideMessagePreview,
@@ -27,9 +29,15 @@ import {
 } from '../storage/profile';
 import {
   setAnalyticsOptedIn as setAnalyticsOptedInClient,
+  track,
 } from '../lib/analytics';
 import { supabase } from '../lib/supabase';
-import { TOS_URL, PRIVACY_POLICY_URL, supportMailto } from '../lib/links';
+import {
+  TOS_URL,
+  PRIVACY_POLICY_URL,
+  SHARE_MESSAGE,
+  supportMailto,
+} from '../lib/links';
 import type { RootStackParamList } from '../navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -110,6 +118,20 @@ export default function ProfileScreen() {
     }
   };
 
+  const onShare = async () => {
+    try {
+      const result = await Share.share({
+        message: SHARE_MESSAGE,
+        title: 'Anor',
+      });
+      if (result.action === Share.sharedAction) {
+        track('shared_app');
+      }
+    } catch {
+      // Share sheet cancelled or unavailable — nothing to do.
+    }
+  };
+
   const onDeleteAccount = () => {
     Alert.alert(
       'Delete your Anor account?',
@@ -170,6 +192,12 @@ export default function ProfileScreen() {
 
         <Text style={styles.name}>{profile?.name ?? 'Unnamed'}</Text>
 
+        {isFoundingMember(profile?.createdAt) && (
+          <View style={styles.badgeRow}>
+            <FoundingBadge size="md" />
+          </View>
+        )}
+
         {profile?.bio && profile.bio.length > 0 && (
           <Text style={styles.bio}>{profile.bio}</Text>
         )}
@@ -187,6 +215,17 @@ export default function ProfileScreen() {
         >
           <Ionicons name="pencil-outline" size={16} color={colors.secondary} />
           <Text style={styles.editLabel}>Edit profile</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={onShare}
+          style={({ pressed }) => [
+            styles.shareBtn,
+            pressed && styles.shareBtnPressed,
+          ]}
+        >
+          <Ionicons name="share-outline" size={16} color={colors.background} />
+          <Text style={styles.shareLabel}>Invite a friend</Text>
         </Pressable>
 
         <View style={styles.spacer} />
@@ -351,6 +390,20 @@ const styles = StyleSheet.create({
   },
   editBtnPressed: { backgroundColor: colors.surfaceElevated },
   editLabel: { color: colors.secondary, fontSize: 14, fontWeight: '600' },
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    alignSelf: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  shareBtnPressed: { backgroundColor: colors.primaryDim },
+  shareLabel: { color: colors.background, fontSize: 14, fontWeight: '600' },
+  badgeRow: { alignItems: 'center', marginTop: -spacing.sm },
   linkRow: {
     flexDirection: 'row',
     alignItems: 'center',

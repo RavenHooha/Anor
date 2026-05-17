@@ -17,3 +17,15 @@ export const SUPPORT_EMAIL = 'support@anor.app';
 export function supportMailto(subject = 'Anor support'): string {
   return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`;
 }
+
+// Where the "Share Anor" button sends people. Currently points at the
+// GitHub repo as a stable, public landing; replace with anor.app/install
+// (or wherever you host) once the marketing site exists.
+export const INSTALL_URL = 'https://github.com/RavenHooha/Anor';
+
+// Default copy for the share sheet. Keep it short, human, and benefit-led —
+// people forward what reads like a real recommendation, not marketing copy.
+export const SHARE_MESSAGE =
+  "I'm on Anor — it shows you people who are actually nearby right now, " +
+  'not just somewhere in the same city. Worth a look: ' +
+  INSTALL_URL;

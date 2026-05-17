@@ -16,6 +16,8 @@ import MessageComposerModal from '../components/MessageComposerModal';
 import ReportUserModal from '../components/ReportUserModal';
 import InterestChips from '../components/InterestChips';
 import PhotoGalleryViewer from '../components/PhotoGalleryViewer';
+import FoundingBadge from '../components/FoundingBadge';
+import { isFoundingMember } from '../lib/founding';
 import { createOrGetThread, findExistingThread } from '../storage/threads';
 import { blockUser } from '../storage/blocks';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -83,6 +85,12 @@ export default function UserProfileScreen({ route, navigation }: Props) {
       />
 
       <Text style={styles.name}>{user.name}</Text>
+
+      {isFoundingMember(user.createdAt) && (
+        <View style={{ alignItems: 'center' }}>
+          <FoundingBadge size="md" />
+        </View>
+      )}
 
       {user.venue && (
         <View style={styles.venueRow}>

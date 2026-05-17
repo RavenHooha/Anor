@@ -11,4 +11,5 @@ export type NearbyUser = {
   age: number | null;
   venue: string | null;
   distanceM: number;
+  createdAt: string | null;
 };

@@ -2,6 +2,8 @@ import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
 import { STATUS_BY_ID } from '../types/status';
+import { isFoundingMember } from '../lib/founding';
+import FoundingBadge from './FoundingBadge';
 import type { NearbyUser } from '../types/user';
 
 type Props = {
@@ -48,6 +50,7 @@ export default function NearbyCard({ user, onPress, onMessage }: Props) {
         <View style={styles.statusRow}>
           <Ionicons name={cfg.icon} size={14} color={cfg.color} />
           <Text style={[styles.statusLabel, { color: cfg.color }]}>{cfg.label}</Text>
+          {isFoundingMember(user.createdAt) && <FoundingBadge />}
         </View>
         {user.venue && (
           <View style={styles.venueRow}>

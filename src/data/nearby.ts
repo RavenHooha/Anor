@@ -44,6 +44,7 @@ export async function fetchNearby(
       venue: r.venue ?? null,
       status: r.status as Status,
       distanceM: r.distance_m,
+      createdAt: r.created_at ?? null,
     }));
 }
 
@@ -58,4 +59,5 @@ type RpcRow = {
   status: string | null;
   venue: string | null;
   distance_m: number;
+  created_at: string | null;
 };
