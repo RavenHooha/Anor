@@ -180,15 +180,24 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>You</Text>
-
-        <View style={styles.avatarFrame}>
-          {profile?.photoUrl ? (
-            <Image source={{ uri: profile.photoUrl }} style={styles.avatar} />
-          ) : (
-            <View style={styles.avatarEmpty} />
-          )}
-        </View>
+        <Pressable
+          onPress={() => navigation.navigate('EditProfile')}
+          style={({ pressed }) => [
+            styles.avatarPressable,
+            pressed && { opacity: 0.8 },
+          ]}
+        >
+          <View style={styles.avatarFrame}>
+            {profile?.photoUrl ? (
+              <Image source={{ uri: profile.photoUrl }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatarEmpty} />
+            )}
+            <View style={styles.avatarEditIcon}>
+              <Ionicons name="pencil" size={14} color={colors.background} />
+            </View>
+          </View>
+        </Pressable>
 
         <Text style={styles.name}>{profile?.name ?? 'Unnamed'}</Text>
 
@@ -204,6 +213,15 @@ export default function ProfileScreen() {
 
         {profile && profile.interests.length > 0 && (
           <InterestChips interests={profile.interests} align="center" />
+        )}
+
+        {profile?.createdAt && (
+          <Text style={styles.joinedText}>
+            Joined {new Date(profile.createdAt).toLocaleString('en-US', {
+              month: 'long',
+              year: 'numeric',
+            })}
+          </Text>
         )}
 
         <View style={styles.actionRow}>
@@ -342,13 +360,12 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.md,
     paddingBottom: spacing.xl,
-    gap: spacing.lg,
+    gap: spacing.md,
   },
-  title: { ...typography.display, color: colors.secondary },
+  avatarPressable: { alignSelf: 'center' },
   avatarFrame: {
-    alignSelf: 'center',
     width: 140,
     height: 140,
     borderRadius: 70,
@@ -359,6 +376,26 @@ const styles = StyleSheet.create({
   },
   avatar: { width: '100%', height: '100%' },
   avatarEmpty: { flex: 1 },
+  avatarEditIcon: {
+    position: 'absolute',
+    right: 4,
+    bottom: 4,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.background,
+  },
+  joinedText: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textAlign: 'center',
+    fontSize: 12,
+    marginTop: -spacing.xs,
+  },
   name: {
     ...typography.title,
     fontSize: 26,
