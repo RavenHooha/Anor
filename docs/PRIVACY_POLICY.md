@@ -82,15 +82,25 @@ permitted.
 
 ## 4. Aggregate analytics (opt-in only)
 
-If you enable "Help improve Anor" in Settings, we record which venues
-you tag and when. This data is used **only in aggregated form** — for
-example, "47 users tagged this coffee shop on weekday evenings." Any
-external surface that uses this data must include at least 10 users in
-each result (the k-anonymity threshold) before it's displayed. Your
-individual movements are never sold or exposed.
+If you enable "Help improve Anor" in Settings, two things happen:
+
+1. **Venue check-ins are recorded** so they can be aggregated into
+   anonymous monthly trends — for example, "47 users tagged this coffee
+   shop on weekday evenings." Any external surface that uses this data
+   must include at least 10 users in each result before it's displayed.
+2. **Product analytics events** (PostHog) fire — recording when you
+   open the app, complete onboarding, set a venue, or send a message.
+   These tell us what's working and what's broken. **We never send the
+   content of your messages, the names of venues you tag, or any
+   identifying information.** Only the fact that the event happened.
+
+If you do NOT enable this toggle, **the PostHog analytics SDK is never
+initialized on your device** — not just "initialized and silenced."
+Stronger by design.
 
 You can turn this off at any time via Settings. When you turn it off,
-we stop recording your check-ins immediately.
+we stop recording your check-ins and stop sending analytics events
+immediately.
 
 ## 5. Your rights
 

@@ -13,6 +13,12 @@ import {
   onNotificationTap,
   setupPushNotifications,
 } from './src/notifications/setup';
+import {
+  setAnalyticsOptedIn,
+  identify as identifyAnalytics,
+  resetAnalytics,
+  track,
+} from './src/lib/analytics';
 import { colors } from './src/theme';
 
 // Crash reporting. Privacy notes:
@@ -77,11 +83,21 @@ function App() {
   const refreshProfile = useCallback(async () => {
     if (!session) {
       setHasProfile(null);
+      resetAnalytics();
       return;
     }
     try {
       const p = await getMyProfile();
       setHasProfile(!!p);
+      // Sync PostHog opt-in state with the user's preference. If opted
+      // in, also link future events to this user id.
+      if (p?.analyticsOptedIn) {
+        await setAnalyticsOptedIn(true);
+        identifyAnalytics(session.user.id);
+        track('app_open');
+      } else {
+        await setAnalyticsOptedIn(false);
+      }
     } catch {
       setHasProfile(false);
     }

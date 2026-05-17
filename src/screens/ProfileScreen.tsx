@@ -25,6 +25,9 @@ import {
   exportMyData,
   type Profile,
 } from '../storage/profile';
+import {
+  setAnalyticsOptedIn as setAnalyticsOptedInClient,
+} from '../lib/analytics';
 import { supabase } from '../lib/supabase';
 import { TOS_URL, PRIVACY_POLICY_URL, supportMailto } from '../lib/links';
 import type { RootStackParamList } from '../navigation/types';
@@ -77,6 +80,9 @@ export default function ProfileScreen() {
     setProfile({ ...profile, analyticsOptedIn: next });
     try {
       await setAnalyticsOptedIn(next);
+      // Sync the SDK state too — opt-in instantiates PostHog and starts
+      // capturing; opt-out tells the SDK to stop.
+      await setAnalyticsOptedInClient(next);
     } catch (e) {
       setProfile({ ...profile, analyticsOptedIn: !next });
       Alert.alert('Could not save', e instanceof Error ? e.message : 'Try again.');

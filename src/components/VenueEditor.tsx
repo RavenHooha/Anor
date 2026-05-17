@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radius, typography } from '../theme';
 import { setVenue, clearVenue, VENUE_MAX_LENGTH } from '../data/venue';
+import { track } from '../lib/analytics';
 
 type Props = {
   venue: string | null;
@@ -43,6 +44,7 @@ export default function VenueEditor({ venue, onChange, disabled }: Props) {
     setError(null);
     try {
       await setVenue(trimmed);
+      track('venue_set');
       onChange(trimmed);
       setOpen(false);
     } catch (e) {

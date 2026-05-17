@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { blockUser } from '../storage/blocks';
+import { track } from '../lib/analytics';
 import ReportUserModal from '../components/ReportUserModal';
 import { colors, spacing, radius, typography } from '../theme';
 import {
@@ -154,6 +155,7 @@ export default function ChatScreen({ route, navigation }: Props) {
     setError(null);
     try {
       const sent = await sendMessage(threadId, trimmed);
+      track('message_sent');
       setBody('');
       setMessages((prev) => {
         if (prev.some((m) => m.id === sent.id)) return prev;

@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, radius, typography } from '../theme';
 import StepIndicator from '../components/StepIndicator';
 import { uploadProfilePhoto, upsertMyProfile } from '../storage/profile';
+import { track } from '../lib/analytics';
 import { useProfileGate } from '../auth/profileGate';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
@@ -34,6 +35,7 @@ export default function OnboardingBioScreen({ route }: Props) {
     try {
       const photoUrl = photoUri ? await uploadProfilePhoto(photoUri) : null;
       await upsertMyProfile({ name, photoUrl, bio: bio.trim() });
+      track('onboarding_completed');
       // App.tsx swaps the stack to Main once it sees the profile exists.
       await refreshProfile();
     } catch (e) {

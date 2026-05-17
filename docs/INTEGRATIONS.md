@@ -15,7 +15,7 @@ record of processing), and onboarding any future contributors.
 | **Firebase (FCM)** | Android push delivery | Free (Spark) | Active | Push token + notification payload |
 | **Apple APNs** | iOS push delivery | $99/yr Apple Dev | Not yet | Push token + notification payload |
 | **GitHub** | Source repo, docs hosting (raw URLs) | Free | Active | Code only, no user data |
-| **PostHog** | Product analytics | Free | Planned | Yes — anonymized per opt-in |
+| **PostHog** | Product analytics | Free | Active | Only for opted-in users |
 | **Sentry** | Crash reporting | Free | Active | Stack traces + device meta (scrubbed) |
 | **Habitat for Humanity WNC** | Mission recipient (not an API) | — | Default recipient per MISSION.md | No |
 
@@ -113,17 +113,38 @@ record of processing), and onboarding any future contributors.
 
 ---
 
-## PostHog (planned)
+## PostHog
 
-**What:** Product analytics — what screens users open, where they drop off, what they tap. Free tier covers 1M events/month, plenty for the foreseeable future.
+**What:** Product analytics — what events fire, funnel completion, retention. Free tier covers 1M events/month.
 
-**Setup notes:**
-- Sign up at [posthog.com](https://posthog.com), create project, copy API key.
-- Add `EXPO_PUBLIC_POSTHOG_KEY` as EAS env var (Plaintext, all environments).
-- Wrap App with `<PostHogProvider apiKey={...}>`.
-- Pure JS install — OTA-deployable, no rebuild needed.
+**Project ID:** `428223`
+**Region:** US Cloud (`https://us.i.posthog.com`)
+**Dashboard:** [us.posthog.com](https://us.posthog.com)
+**Account owner:** RavenHooha
 
-**Privacy:** PostHog runs in the user's app and reports back. We'll respect the existing `analytics_opted_in` flag — don't initialize PostHog at all if user is opted out. Document this in PRIVACY_POLICY.md when wired up.
+**Credentials:**
+| Item | Where stored | Visibility |
+|------|--------------|------------|
+| `EXPO_PUBLIC_POSTHOG_KEY` (project token, starts `phc_…`) | EAS env vars | Plaintext (write-only client key; designed to be public) |
+
+**Rotation:** Dashboard → Project Settings → Project token → regenerate. Then update EAS env var and OTA-push (no rebuild needed).
+
+**Privacy architecture:**
+- **PostHog is NEVER initialized for opted-out users** — see `src/lib/analytics.ts`. Stronger than "init + suppress" because opted-out users don't even download the SDK config.
+- **Autocapture disabled at project level** (in PostHog dashboard).
+- **App lifecycle auto-events disabled** in the client config.
+- **Session Recordings: never enabled.** Would capture screen content including message bodies — incompatible with PRIVACY.md.
+- **Event names are stable strings** — never user-content-derived. Event properties are PII-free primitives only.
+
+**Events tracked (v1):**
+- `app_open` — every time a signed-in opted-in user opens the app
+- `onboarding_completed` — final save on OnboardingBioScreen
+- `venue_set` — successful venue tag (no venue text in payload)
+- `message_sent` — message send success (no body, no recipient id)
+
+**Adding events:** call `track('event_name')` from anywhere. The wrapper no-ops if user is opted out. Keep event names lowercase_with_underscores, keep properties primitive and PII-free.
+
+**OTA-deployable:** pure JS, no native code. Future changes ship via `eas update`.
 
 ---
 
