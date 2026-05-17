@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radius, typography } from '../theme';
+import { colors, typography } from '../theme';
 
 type Props = {
   size?: 'sm' | 'md';
@@ -26,17 +26,10 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
     gap: 4,
-    paddingHorizontal: spacing.sm,
     paddingVertical: 2,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.highlight,
-    backgroundColor: colors.surface,
   },
   badgeMd: {
-    paddingHorizontal: spacing.md,
     paddingVertical: 4,
     gap: 6,
   },
