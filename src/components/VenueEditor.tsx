@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radius, typography } from '../theme';
 import { setVenue, clearVenue, VENUE_MAX_LENGTH } from '../data/venue';
 
@@ -24,6 +25,7 @@ export default function VenueEditor({ venue, onChange, disabled }: Props) {
   const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (open) {
@@ -100,7 +102,7 @@ export default function VenueEditor({ venue, onChange, disabled }: Props) {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <Pressable style={styles.backdrop} onPress={() => setOpen(false)} />
-          <View style={styles.sheet}>
+          <View style={[styles.sheet, { paddingBottom: spacing.xl + insets.bottom }]}>
             <View style={styles.handle} />
             <Text style={styles.title}>Where are you?</Text>
             <Text style={typography.caption}>

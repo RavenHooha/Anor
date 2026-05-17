@@ -1,5 +1,7 @@
-import { View, Text, Image, Pressable, StyleSheet, Alert } from 'react-native';
+import { useState } from 'react';
+import { View, Text, Image, Pressable, Modal, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { colors, spacing, radius, typography } from '../theme';
 import { MAX_PHOTOS, uploadProfilePhoto } from '../storage/profile';
@@ -10,6 +12,8 @@ type Props = {
 };
 
 export default function PhotoGalleryEditor({ photos, onChange }: Props) {
+  const [actionsFor, setActionsFor] = useState<number | null>(null);
+  const insets = useSafeAreaInsets();
   const slots: (string | null)[] = [];
   for (let i = 0; i < MAX_PHOTOS; i += 1) {
     slots.push(photos[i] ?? null);
@@ -46,6 +50,20 @@ export default function PhotoGalleryEditor({ photos, onChange }: Props) {
     ]);
   };
 
+  const makeMain = (index: number) => {
+    if (index === 0) return;
+    const next = [photos[index], ...photos.filter((_, i) => i !== index)];
+    onChange(next);
+  };
+
+  const onPhotoPress = (index: number) => {
+    if (index === 0) {
+      removeAt(index);
+      return;
+    }
+    setActionsFor(index);
+  };
+
   return (
     <View style={styles.wrap}>
       <Text style={styles.counter}>
@@ -56,7 +74,7 @@ export default function PhotoGalleryEditor({ photos, onChange }: Props) {
           <View key={i} style={styles.slot}>
             {url ? (
               <Pressable
-                onPress={() => removeAt(i)}
+                onPress={() => onPhotoPress(i)}
                 style={styles.slotInner}
               >
                 <Image source={{ uri: url }} style={styles.slotImage} />
@@ -85,8 +103,58 @@ export default function PhotoGalleryEditor({ photos, onChange }: Props) {
         ))}
       </View>
       <Text style={styles.hint}>
-        Tap a photo to remove. First photo is your main one.
+        Tap a photo for options. Your main photo shows everywhere others see you.
       </Text>
+
+      <Modal
+        visible={actionsFor !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setActionsFor(null)}
+      >
+        <Pressable style={styles.backdrop} onPress={() => setActionsFor(null)} />
+        <View style={[styles.sheet, { paddingBottom: spacing.xl + insets.bottom }]}>
+          <View style={styles.handle} />
+          <Text style={styles.sheetTitle}>Photo options</Text>
+          <View style={styles.sheetActions}>
+            <Pressable
+              onPress={() => {
+                if (actionsFor !== null) makeMain(actionsFor);
+                setActionsFor(null);
+              }}
+              style={({ pressed }) => [
+                styles.actionBtn,
+                styles.actionBtnPrimary,
+                pressed && styles.actionBtnPrimaryPressed,
+              ]}
+            >
+              <Ionicons name="star" size={18} color={colors.background} />
+              <Text style={styles.actionLabelPrimary}>Make main</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                const idx = actionsFor;
+                setActionsFor(null);
+                if (idx !== null) removeAt(idx);
+              }}
+              style={({ pressed }) => [
+                styles.actionBtn,
+                styles.actionBtnGhost,
+                pressed && styles.actionBtnGhostPressed,
+              ]}
+            >
+              <Ionicons name="trash-outline" size={18} color={colors.primary} />
+              <Text style={styles.actionLabelGhost}>Remove</Text>
+            </Pressable>
+          </View>
+          <Pressable
+            onPress={() => setActionsFor(null)}
+            style={styles.cancelBtn}
+          >
+            <Text style={styles.cancelLabel}>Cancel</Text>
+          </Pressable>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -140,4 +208,59 @@ const styles = StyleSheet.create({
   },
   primaryLabel: { color: colors.background, fontSize: 10, fontWeight: '700' },
   hint: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs },
+
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  sheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xl,
+    gap: spacing.md,
+  },
+  handle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    marginBottom: spacing.xs,
+  },
+  sheetTitle: { ...typography.title, fontSize: 18 },
+  sheetActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  actionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    borderRadius: radius.pill,
+  },
+  actionBtnPrimary: { backgroundColor: colors.primary },
+  actionBtnPrimaryPressed: { backgroundColor: colors.primaryDim },
+  actionBtnGhost: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  actionBtnGhostPressed: { backgroundColor: colors.surfaceElevated },
+  actionLabelPrimary: { color: colors.background, fontSize: 15, fontWeight: '600' },
+  actionLabelGhost: { color: colors.primary, fontSize: 15, fontWeight: '600' },
+  cancelBtn: {
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+  },
+  cancelLabel: { ...typography.caption, color: colors.textSecondary, fontSize: 14 },
 });

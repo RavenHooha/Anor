@@ -152,13 +152,16 @@ export default function UserProfileScreen({ route, navigation }: Props) {
               {
                 text: 'Block',
                 style: 'destructive',
-                onPress: async () => {
-                  try {
-                    await blockUser(user.id);
-                    navigation.goBack();
-                  } catch (e) {
-                    setError(e instanceof Error ? e.message : 'Could not block.');
-                  }
+                onPress: () => {
+                  // Optimistic close — block in background, surface a
+                  // global Alert only if the network insert fails.
+                  navigation.goBack();
+                  blockUser(user.id).catch((e) => {
+                    Alert.alert(
+                      'Block failed',
+                      e instanceof Error ? e.message : 'Try again.',
+                    );
+                  });
                 },
               },
             ],

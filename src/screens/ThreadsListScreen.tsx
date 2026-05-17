@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, spacing, radius, typography } from '../theme';
 import { listMyThreads, type ThreadSummary } from '../storage/threads';
@@ -43,9 +43,17 @@ export default function ThreadsListScreen() {
   }, []);
 
   useEffect(() => {
-    load();
     return subscribeToMyThreadChanges(load);
   }, [load]);
+
+  // Re-fetch whenever the screen gains focus (e.g. returning from a chat
+  // after blocking — blocks change what list_my_threads returns but don't
+  // fire a threads-table event, so realtime alone misses the update).
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);

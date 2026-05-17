@@ -9,8 +9,11 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { blockUser } from '../storage/blocks';
 import { colors, spacing, radius, typography } from '../theme';
 import {
   createOrGetThread,
@@ -71,9 +74,49 @@ export default function ChatScreen({ route, navigation }: Props) {
   }, [threadId, refreshThread]);
 
   useEffect(() => {
-    if (thread) {
-      navigation.setOptions({ headerTitle: thread.otherName });
-    }
+    if (!thread) return;
+    const otherName = thread.otherName;
+    const otherId = thread.otherId;
+    const confirmBlock = () => {
+      Alert.alert(
+        `Block ${otherName}?`,
+        `You won't see ${otherName} in your nearby feed or messages, and they won't see you. This can be undone later.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Block',
+            style: 'destructive',
+            onPress: () => {
+              navigation.goBack();
+              blockUser(otherId).catch((e) => {
+                Alert.alert(
+                  'Block failed',
+                  e instanceof Error ? e.message : 'Try again.',
+                );
+              });
+            },
+          },
+        ],
+      );
+    };
+    navigation.setOptions({
+      headerTitle: otherName,
+      headerRight: () => (
+        <Pressable
+          onPress={confirmBlock}
+          hitSlop={8}
+          style={({ pressed }) => [
+            { marginRight: 12, opacity: pressed ? 0.6 : 1 },
+          ]}
+        >
+          <Ionicons
+            name="ellipsis-horizontal"
+            size={22}
+            color={colors.textSecondary}
+          />
+        </Pressable>
+      ),
+    });
   }, [thread, navigation]);
 
   useEffect(() => {
@@ -113,11 +156,12 @@ export default function ChatScreen({ route, navigation }: Props) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.safe}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <FlatList
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <FlatList
         ref={listRef}
         data={messages}
         keyExtractor={(m) => m.id}
@@ -209,8 +253,9 @@ export default function ChatScreen({ route, navigation }: Props) {
         </View>
       )}
 
-      {error && <Text style={styles.errorText}>{error}</Text>}
-    </KeyboardAvoidingView>
+        {error && <Text style={styles.errorText}>{error}</Text>}
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -286,6 +331,7 @@ function MessageBubble({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
+  flex: { flex: 1 },
   list: {
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,

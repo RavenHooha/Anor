@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radius, typography } from '../theme';
 
 const MESSAGE_LIMIT = 120;
@@ -27,6 +28,7 @@ export default function MessageComposerModal({
   onSend,
 }: Props) {
   const [text, setText] = useState('');
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (visible) setText('');
@@ -47,7 +49,7 @@ export default function MessageComposerModal({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <Pressable style={styles.backdrop} onPress={onCancel} />
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { paddingBottom: spacing.xl + insets.bottom }]}>
           <View style={styles.handle} />
           <Text style={styles.title}>Message {recipientName}</Text>
           <Text style={typography.caption}>
