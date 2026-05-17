@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "885501536075",
+    "project_id": "anor-87595",
+    "storage_bucket": "anor-87595.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:885501536075:android:a70e868b94e1be68586ace",
+        "android_client_info": {
+          "package_name": "com.anonymous.Anor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBWIAUUujbqzHXg8Me1bRWhjpB-KhJkTnE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
