@@ -191,6 +191,7 @@ const styles = StyleSheet.create({
   chipFilled: {
     backgroundColor: colors.surfaceElevated,
     borderColor: colors.primary,
+    borderStyle: 'solid',
   },
   chipText: {
     ...typography.caption,
