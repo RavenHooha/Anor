@@ -1,6 +1,6 @@
 # Anor integrations & external services
 
-_Last updated: 2026-05-17_
+_Last updated: 2026-05-17 (revised)_
 
 Every external service Anor depends on. Used for: budget tracking,
 credential rotation, disaster recovery, privacy audits (GDPR Article 30
@@ -177,6 +177,8 @@ record of processing), and onboarding any future contributors.
 
 **Sourcemap upload:** metro.config.js wraps the default Expo Metro config with `getSentryExpoConfig`, which uploads sourcemaps to Sentry on each EAS build using `SENTRY_AUTH_TOKEN` + `SENTRY_ORG` + `SENTRY_PROJECT`. Without this, release-build crash traces are minified gibberish.
 
+⚠️ **Pending native rebuild:** the currently-installed APK on test devices predates the `@sentry/react-native` install. JS-level Sentry code runs (no crash on launch) but the native crash handlers aren't bundled — so a hard crash from native code won't be captured. **Fixes automatically on the next `eas build:dev`**. No urgency unless you start getting "the app just died with no error" reports.
+
 ---
 
 ## Future / conditional integrations
@@ -199,8 +201,9 @@ If you ever lose access to your computer, you'll need:
 - **Expo** account credentials
 - **Firebase / Google** account credentials
 - **GitHub** account credentials
-- **Apple Developer** (when added)
-- **PostHog** account credentials (when added)
-- **Sentry** account credentials (when added)
+- **PostHog** account credentials
+- **Sentry** account credentials
+- **Apple Developer** (when iOS added)
+- **Cloudflare** (when domain registered)
 
 Strongly recommend a password manager + 2FA on every one of these. The Supabase service_role key + EAS access alone gives full control over the running app.
