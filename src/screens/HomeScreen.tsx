@@ -10,9 +10,11 @@ import StatusBadge from '../components/StatusBadge';
 import NearbyCard from '../components/NearbyCard';
 import MysteryCard from '../components/MysteryCard';
 import RadiusSelector from '../components/RadiusSelector';
+import VenueEditor from '../components/VenueEditor';
 import { loadStatus, saveStatus } from '../storage/status';
 import { loadRadius, saveRadius } from '../storage/radius';
 import { fetchNearby, DEFAULT_RADIUS_M, RADIUS_PRESETS } from '../data/nearby';
+import { getMyVenue } from '../data/venue';
 import { createOrGetThread } from '../storage/threads';
 import { useBleNearby } from '../ble/useBleNearby';
 import { useLocation } from '../location/useLocation';
@@ -30,6 +32,7 @@ export default function HomeScreen() {
   const [nearby, setNearby] = useState<NearbyUser[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [areaNames, setAreaNames] = useState<AreaNames | null>(null);
+  const [venue, setVenue] = useState<string | null>(null);
   const navigation = useNavigation<Nav>();
 
   const { status: bleStatus, devices: bleDevices, retry: retryBle } = useBleNearby();
@@ -46,8 +49,12 @@ export default function HomeScreen() {
   const loadNearby = useCallback(async () => {
     if (!coords) return;
     try {
-      const users = await fetchNearby(coords, radiusM);
+      const [users, myVenue] = await Promise.all([
+        fetchNearby(coords, radiusM),
+        getMyVenue(),
+      ]);
       setNearby(users);
+      setVenue(myVenue);
     } catch {
       // ignore — banner state covers errors
     }
@@ -56,6 +63,12 @@ export default function HomeScreen() {
   useEffect(() => {
     loadNearby();
   }, [loadNearby]);
+
+  useEffect(() => {
+    if (!coords || status === 'focus') return;
+    const id = setInterval(loadNearby, 20_000);
+    return () => clearInterval(id);
+  }, [coords, status, loadNearby]);
 
   useEffect(() => {
     if (!coords) return;
@@ -136,6 +149,12 @@ export default function HomeScreen() {
         <StatusBadge status={status} />
 
         <StatusSelector current={status} onChange={onChange} />
+
+        <VenueEditor
+          venue={venue}
+          onChange={setVenue}
+          disabled={!coords || isFocus}
+        />
 
         <RadiusSelector current={radiusM} onChange={onChangeRadius} />
 

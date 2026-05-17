@@ -9,5 +9,6 @@ export type NearbyUser = {
   bio: string;
   interests: string[];
   age: number | null;
+  venue: string | null;
   distanceM: number;
 };

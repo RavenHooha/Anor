@@ -73,6 +73,13 @@ export default function UserProfileScreen({ route, navigation }: Props) {
 
       <Text style={styles.name}>{user.name}</Text>
 
+      {user.venue && (
+        <View style={styles.venueRow}>
+          <Ionicons name="location" size={14} color={colors.primary} />
+          <Text style={styles.venueText}>{user.venue}</Text>
+        </View>
+      )}
+
       {user.bio.length > 0 && <Text style={styles.bio}>{user.bio}</Text>}
 
       <InterestChips interests={user.interests} align="center" />
@@ -192,6 +199,17 @@ const styles = StyleSheet.create({
     ...typography.body,
     textAlign: 'center',
     paddingHorizontal: spacing.md,
+  },
+  venueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
+  venueText: {
+    ...typography.body,
+    color: colors.textPrimary,
+    fontWeight: '600',
   },
   statusCard: {
     flexDirection: 'row',

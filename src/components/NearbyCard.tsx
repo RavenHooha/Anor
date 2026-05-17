@@ -49,6 +49,14 @@ export default function NearbyCard({ user, onPress, onMessage }: Props) {
           <Ionicons name={cfg.icon} size={14} color={cfg.color} />
           <Text style={[styles.statusLabel, { color: cfg.color }]}>{cfg.label}</Text>
         </View>
+        {user.venue && (
+          <View style={styles.venueRow}>
+            <Ionicons name="location" size={12} color={colors.primary} />
+            <Text style={styles.venueText} numberOfLines={1}>
+              {user.venue}
+            </Text>
+          </View>
+        )}
         {user.bio.length > 0 && (
           <Text style={styles.bio} numberOfLines={2}>
             {user.bio}
@@ -113,6 +121,13 @@ const styles = StyleSheet.create({
   name: { ...typography.title, fontSize: 17, flex: 1 },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   statusLabel: { ...typography.caption, fontWeight: '600' },
+  venueRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  venueText: {
+    ...typography.caption,
+    color: colors.textPrimary,
+    fontWeight: '500',
+    flex: 1,
+  },
   bio: {
     ...typography.caption,
     color: colors.textSecondary,

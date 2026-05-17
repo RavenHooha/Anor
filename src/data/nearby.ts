@@ -41,6 +41,7 @@ export async function fetchNearby(
       bio: r.bio ?? '',
       interests: Array.isArray(r.interests) ? r.interests : [],
       age: typeof r.age === 'number' ? r.age : null,
+      venue: r.venue ?? null,
       status: r.status as Status,
       distanceM: r.distance_m,
     }));
@@ -55,5 +56,6 @@ type RpcRow = {
   interests: string[] | null;
   age: number | null;
   status: string | null;
+  venue: string | null;
   distance_m: number;
 };

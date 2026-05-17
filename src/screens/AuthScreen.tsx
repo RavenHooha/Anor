@@ -13,8 +13,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
 import { sendMagicLink } from '../auth/deepLink';
+import { supabase } from '../lib/supabase';
 
 type Phase = 'idle' | 'sending' | 'sent' | 'error';
+
+const DEV_EMAIL = process.env.EXPO_PUBLIC_DEV_EMAIL;
+const DEV_PASSWORD = process.env.EXPO_PUBLIC_DEV_PASSWORD;
+const SHOW_DEV_SKIP = __DEV__ && !!DEV_EMAIL && !!DEV_PASSWORD;
 
 const FEATURES = [
   {
@@ -51,6 +56,20 @@ export default function AuthScreen() {
     } catch (e) {
       setPhase('error');
       setError(e instanceof Error ? e.message : 'Could not send link.');
+    }
+  };
+
+  const onDevSkip = async () => {
+    if (!DEV_EMAIL || !DEV_PASSWORD || phase === 'sending') return;
+    setPhase('sending');
+    setError(null);
+    const { error: err } = await supabase.auth.signInWithPassword({
+      email: DEV_EMAIL,
+      password: DEV_PASSWORD,
+    });
+    if (err) {
+      setPhase('error');
+      setError(err.message);
     }
   };
 
@@ -134,6 +153,20 @@ export default function AuthScreen() {
               <Text style={styles.fineprint}>
                 No passwords. We email you a one-tap sign-in link.
               </Text>
+              {SHOW_DEV_SKIP && (
+                <Pressable
+                  onPress={onDevSkip}
+                  disabled={phase === 'sending'}
+                  style={({ pressed }) => [
+                    styles.devSkip,
+                    pressed && { opacity: 0.6 },
+                  ]}
+                >
+                  <Text style={styles.devSkipText}>
+                    Skip (dev) — sign in as {DEV_EMAIL}
+                  </Text>
+                </Pressable>
+              )}
             </View>
           )}
         </ScrollView>
@@ -238,4 +271,17 @@ const styles = StyleSheet.create({
   bold: { fontWeight: '600', color: colors.textPrimary },
   linkBtn: { paddingVertical: spacing.sm, alignSelf: 'flex-start' },
   linkBtnText: { color: colors.secondary, fontSize: 15, fontWeight: '500' },
+  devSkip: {
+    marginTop: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
+    borderRadius: radius.md,
+    alignItems: 'center',
+  },
+  devSkipText: {
+    ...typography.caption,
+    color: colors.textMuted,
+  },
 });
