@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { blockUser } from '../storage/blocks';
+import ReportUserModal from '../components/ReportUserModal';
 import { colors, spacing, radius, typography } from '../theme';
 import {
   createOrGetThread,
@@ -46,6 +47,7 @@ export default function ChatScreen({ route, navigation }: Props) {
   const [myName, setMyName] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [openerComposerOpen, setOpenerComposerOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const listRef = useRef<FlatList<Message>>(null);
 
   useEffect(() => {
@@ -102,11 +104,18 @@ export default function ChatScreen({ route, navigation }: Props) {
         ],
       );
     };
+    const openMenu = () => {
+      Alert.alert(otherName, undefined, [
+        { text: 'Report', onPress: () => setReportOpen(true) },
+        { text: 'Block', style: 'destructive', onPress: confirmBlock },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    };
     navigation.setOptions({
       headerTitle: otherName,
       headerRight: () => (
         <Pressable
-          onPress={confirmBlock}
+          onPress={openMenu}
           hitSlop={8}
           style={({ pressed }) => [
             { marginRight: 12, opacity: pressed ? 0.6 : 1 },
@@ -218,6 +227,21 @@ export default function ChatScreen({ route, navigation }: Props) {
           } catch (e) {
             setError(e instanceof Error ? e.message : 'Could not add message.');
           }
+        }}
+      />
+
+      <ReportUserModal
+        visible={reportOpen}
+        reportedId={thread.otherId}
+        reportedName={thread.otherName}
+        contextThreadId={thread.id}
+        onCancel={() => setReportOpen(false)}
+        onSubmitted={() => {
+          setReportOpen(false);
+          Alert.alert(
+            'Report submitted',
+            'Thanks — we\'ll review it. You may want to block this person too.',
+          );
         }}
       />
 

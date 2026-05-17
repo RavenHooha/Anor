@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
 import { STATUS_BY_ID } from '../types/status';
 import MessageComposerModal from '../components/MessageComposerModal';
+import ReportUserModal from '../components/ReportUserModal';
 import InterestChips from '../components/InterestChips';
 import PhotoGalleryViewer from '../components/PhotoGalleryViewer';
 import { createOrGetThread, findExistingThread } from '../storage/threads';
@@ -27,6 +28,7 @@ export default function UserProfileScreen({ route, navigation }: Props) {
   const cfg = STATUS_BY_ID[user.status];
 
   const [composerOpen, setComposerOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [pending, setPending] = useState<'wave' | 'message' | null>(null);
   const [existingThreadId, setExistingThreadId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -152,6 +154,16 @@ export default function UserProfileScreen({ route, navigation }: Props) {
       {error && <Text style={styles.errorText}>{error}</Text>}
 
       <Pressable
+        onPress={() => setReportOpen(true)}
+        style={({ pressed }) => [
+          styles.secondaryAction,
+          pressed && { opacity: 0.6 },
+        ]}
+      >
+        <Text style={styles.secondaryActionLabel}>Report {user.name}</Text>
+      </Pressable>
+
+      <Pressable
         onPress={() => {
           Alert.alert(
             `Block ${user.name}?`,
@@ -191,6 +203,20 @@ export default function UserProfileScreen({ route, navigation }: Props) {
           recipientName={user.name}
           onCancel={() => setComposerOpen(false)}
           onSend={onSendMessage}
+        />
+
+        <ReportUserModal
+          visible={reportOpen}
+          reportedId={user.id}
+          reportedName={user.name}
+          onCancel={() => setReportOpen(false)}
+          onSubmitted={() => {
+            setReportOpen(false);
+            Alert.alert(
+              'Report submitted',
+              'Thanks — we\'ll review it. You may want to block this person too.',
+            );
+          }}
         />
       </ScrollView>
     </SafeAreaView>
@@ -264,11 +290,21 @@ const styles = StyleSheet.create({
   messageBtnPressed: { backgroundColor: colors.primaryDim },
   actionLabel: { fontSize: 16, fontWeight: '600' },
   errorText: { ...typography.caption, color: colors.primary, textAlign: 'center' },
-  blockBtn: {
+  secondaryAction: {
     alignSelf: 'center',
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     marginTop: spacing.md,
+  },
+  secondaryActionLabel: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textDecorationLine: 'underline',
+  },
+  blockBtn: {
+    alignSelf: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
   },
   blockLabel: { ...typography.caption, color: colors.textMuted, textDecorationLine: 'underline' },
 });
