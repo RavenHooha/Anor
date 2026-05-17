@@ -18,6 +18,7 @@ import InterestChips from '../components/InterestChips';
 import {
   getMyProfile,
   setHideMessagePreview,
+  setAnalyticsOptedIn,
   deleteMyAccount,
   type Profile,
 } from '../storage/profile';
@@ -31,6 +32,7 @@ export default function ProfileScreen() {
   const [loaded, setLoaded] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [savingPreview, setSavingPreview] = useState(false);
+  const [savingAnalytics, setSavingAnalytics] = useState(false);
   const navigation = useNavigation<Nav>();
 
   useFocusEffect(
@@ -61,6 +63,20 @@ export default function ProfileScreen() {
       Alert.alert('Could not save', e instanceof Error ? e.message : 'Try again.');
     } finally {
       setSavingPreview(false);
+    }
+  };
+
+  const onToggleAnalytics = async (next: boolean) => {
+    if (!profile || savingAnalytics) return;
+    setSavingAnalytics(true);
+    setProfile({ ...profile, analyticsOptedIn: next });
+    try {
+      await setAnalyticsOptedIn(next);
+    } catch (e) {
+      setProfile({ ...profile, analyticsOptedIn: !next });
+      Alert.alert('Could not save', e instanceof Error ? e.message : 'Try again.');
+    } finally {
+      setSavingAnalytics(false);
     }
   };
 
@@ -164,6 +180,23 @@ export default function ProfileScreen() {
             value={profile?.hideMessagePreview ?? false}
             onValueChange={onTogglePreview}
             disabled={savingPreview || !profile}
+            trackColor={{ false: colors.surfaceElevated, true: colors.primary }}
+            thumbColor={colors.textPrimary}
+          />
+        </View>
+
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleText}>
+            <Text style={styles.linkLabel}>Help improve Anor</Text>
+            <Text style={styles.toggleHint}>
+              Share your venue check-ins anonymously so we can show useful trends
+              (no one ever sees your individual movements). Off by default.
+            </Text>
+          </View>
+          <Switch
+            value={profile?.analyticsOptedIn ?? false}
+            onValueChange={onToggleAnalytics}
+            disabled={savingAnalytics || !profile}
             trackColor={{ false: colors.surfaceElevated, true: colors.primary }}
             thumbColor={colors.textPrimary}
           />

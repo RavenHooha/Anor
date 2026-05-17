@@ -9,6 +9,7 @@ export type Profile = {
   interests: string[];
   age: number | null;
   hideMessagePreview: boolean;
+  analyticsOptedIn: boolean;
 };
 
 export const MAX_PHOTOS = 4;
@@ -20,7 +21,7 @@ export async function getMyProfile(): Promise<Profile | null> {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, name, photo_url, photos, bio, interests, age, hide_message_preview')
+    .select('id, name, photo_url, photos, bio, interests, age, hide_message_preview, analytics_opted_in')
     .eq('id', userId)
     .maybeSingle();
 
@@ -34,6 +35,7 @@ export async function getMyProfile(): Promise<Profile | null> {
     interests: Array.isArray(data.interests) ? data.interests : [],
     age: typeof data.age === 'number' ? data.age : null,
     hideMessagePreview: data.hide_message_preview === true,
+    analyticsOptedIn: data.analytics_opted_in === true,
   };
 }
 
@@ -44,6 +46,17 @@ export async function setHideMessagePreview(value: boolean): Promise<void> {
   const { error } = await supabase
     .from('profiles')
     .update({ hide_message_preview: value })
+    .eq('id', userId);
+  if (error) throw error;
+}
+
+export async function setAnalyticsOptedIn(value: boolean): Promise<void> {
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData.user?.id;
+  if (!userId) throw new Error('Not authenticated');
+  const { error } = await supabase
+    .from('profiles')
+    .update({ analytics_opted_in: value })
     .eq('id', userId);
   if (error) throw error;
 }
@@ -108,7 +121,7 @@ export async function upsertMyProfile(input: {
   const { data, error } = await supabase
     .from('profiles')
     .upsert(row, { onConflict: 'id' })
-    .select('id, name, photo_url, photos, bio, interests, age, hide_message_preview')
+    .select('id, name, photo_url, photos, bio, interests, age, hide_message_preview, analytics_opted_in')
     .single();
 
   if (error) throw error;
@@ -121,5 +134,6 @@ export async function upsertMyProfile(input: {
     interests: Array.isArray(data.interests) ? data.interests : [],
     age: typeof data.age === 'number' ? data.age : null,
     hideMessagePreview: data.hide_message_preview === true,
+    analyticsOptedIn: data.analytics_opted_in === true,
   };
 }

@@ -79,10 +79,40 @@ These are enforced in code, not in marketing copy.
   ended up in an external dashboard, would the rules above still hold?"
   If not, redesign.
 
+## Default stance (decided)
+
+**Analytics participation is opt-IN.** New users have `analytics_opted_in =
+false` by default and must explicitly enable analytics participation via
+Settings before any of their venue check-ins are recorded.
+
+Enforced at write-time, not just read-time: opted-out users' actions are
+**never inserted into `venue_checkins`** in the first place. This is
+stronger than filtering at aggregation time — there's no historical data
+to leak if the database is breached or a future query is poorly scoped.
+
+**Why opt-in over opt-out:**
+- Most defensible globally — GDPR (EU) requires "freely given" consent,
+  which is hard to argue when opt-out is buried in settings.
+- Trust signal: users who see "Anor doesn't collect anything by default"
+  trust the app more than ones who discover hidden data collection.
+- Forces us to make participation worth doing, rather than relying on
+  user inattention.
+
+**Tradeoff accepted:** the dataset will be much smaller (probably 10-20%
+participation without an incentive). That's a real revenue ceiling on
+the future B2B venue analytics product. The bet is that a smaller but
+honest dataset is worth more than a large but coerced one — both
+ethically and legally.
+
 ## Open product decisions (not yet made)
 
-- Default opt-in vs opt-out for analytics inclusion.
-- Whether to offer a paid consumer tier that includes "exclude my data from
-  all aggregates" as a perk.
+- **What's the perk for opting in?** A "founding member" badge? Premium
+  boost credit? Early access to new features? Without a perk, opt-in
+  rates will be low. With a perk, we need to make sure the perk doesn't
+  cross the line into "conditioning consent on a benefit" (which GDPR
+  treats as not freely-given consent — the user must be able to access
+  the core product equivalently whether they opt in or not).
 - Whether to publish a transparency report (count of queries served per
-  venue, etc).
+  venue, etc.).
+- Whether to expose a "Download my data" button (GDPR Article 20 — required
+  before EU launch; nice-to-have elsewhere).
