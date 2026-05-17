@@ -1,12 +1,26 @@
 import { useCallback, useState } from 'react';
-import { View, Text, Image, Pressable, StyleSheet, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  Pressable,
+  StyleSheet,
+  ScrollView,
+  Switch,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
 import InterestChips from '../components/InterestChips';
-import { getMyProfile, type Profile } from '../storage/profile';
+import {
+  getMyProfile,
+  setHideMessagePreview,
+  deleteMyAccount,
+  type Profile,
+} from '../storage/profile';
 import { supabase } from '../lib/supabase';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -16,6 +30,7 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [savingPreview, setSavingPreview] = useState(false);
   const navigation = useNavigation<Nav>();
 
   useFocusEffect(
@@ -32,6 +47,59 @@ export default function ProfileScreen() {
     setSigningOut(true);
     await supabase.auth.signOut().catch(() => {});
     // App.tsx auth gate will react to the session change and reroute to AuthScreen.
+  };
+
+  const onTogglePreview = async (next: boolean) => {
+    if (!profile || savingPreview) return;
+    setSavingPreview(true);
+    // Optimistic — flip locally, revert on error
+    setProfile({ ...profile, hideMessagePreview: next });
+    try {
+      await setHideMessagePreview(next);
+    } catch (e) {
+      setProfile({ ...profile, hideMessagePreview: !next });
+      Alert.alert('Could not save', e instanceof Error ? e.message : 'Try again.');
+    } finally {
+      setSavingPreview(false);
+    }
+  };
+
+  const onDeleteAccount = () => {
+    Alert.alert(
+      'Delete your Anor account?',
+      'This permanently removes your profile, photos, messages, blocks, and check-ins. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Really delete?',
+              'Last chance — there is no recovery after this.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Yes, delete forever',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      await deleteMyAccount();
+                      await supabase.auth.signOut().catch(() => {});
+                    } catch (e) {
+                      Alert.alert(
+                        'Delete failed',
+                        e instanceof Error ? e.message : 'Try again.',
+                      );
+                    }
+                  },
+                },
+              ],
+            );
+          },
+        },
+      ],
+    );
   };
 
   if (!loaded) {
@@ -85,6 +153,22 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
         </Pressable>
 
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleText}>
+            <Text style={styles.linkLabel}>Hide message previews</Text>
+            <Text style={styles.toggleHint}>
+              Notifications show "You have a new message" instead of the sender and text.
+            </Text>
+          </View>
+          <Switch
+            value={profile?.hideMessagePreview ?? false}
+            onValueChange={onTogglePreview}
+            disabled={savingPreview || !profile}
+            trackColor={{ false: colors.surfaceElevated, true: colors.primary }}
+            thumbColor={colors.textPrimary}
+          />
+        </View>
+
         <Pressable
           onPress={onSignOut}
           disabled={signingOut}
@@ -96,6 +180,13 @@ export default function ProfileScreen() {
           <Text style={styles.signOutLabel}>
             {signingOut ? 'Signing out…' : 'Sign out'}
           </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={onDeleteAccount}
+          style={({ pressed }) => [styles.deleteBtn, pressed && { opacity: 0.6 }]}
+        >
+          <Text style={styles.deleteLabel}>Delete account</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -168,4 +259,26 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
   },
   linkLabel: { ...typography.body, color: colors.textSecondary },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  toggleText: { flex: 1, gap: 2 },
+  toggleHint: { ...typography.caption, color: colors.textMuted },
+  deleteBtn: {
+    alignSelf: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.md,
+  },
+  deleteLabel: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textDecorationLine: 'underline',
+  },
 });

@@ -8,6 +8,7 @@ export type Profile = {
   bio: string;
   interests: string[];
   age: number | null;
+  hideMessagePreview: boolean;
 };
 
 export const MAX_PHOTOS = 4;
@@ -19,7 +20,7 @@ export async function getMyProfile(): Promise<Profile | null> {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, name, photo_url, photos, bio, interests, age')
+    .select('id, name, photo_url, photos, bio, interests, age, hide_message_preview')
     .eq('id', userId)
     .maybeSingle();
 
@@ -32,7 +33,24 @@ export async function getMyProfile(): Promise<Profile | null> {
     bio: data.bio ?? '',
     interests: Array.isArray(data.interests) ? data.interests : [],
     age: typeof data.age === 'number' ? data.age : null,
+    hideMessagePreview: data.hide_message_preview === true,
   };
+}
+
+export async function setHideMessagePreview(value: boolean): Promise<void> {
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData.user?.id;
+  if (!userId) throw new Error('Not authenticated');
+  const { error } = await supabase
+    .from('profiles')
+    .update({ hide_message_preview: value })
+    .eq('id', userId);
+  if (error) throw error;
+}
+
+export async function deleteMyAccount(): Promise<void> {
+  const { error } = await supabase.rpc('delete_my_account');
+  if (error) throw error;
 }
 
 export async function uploadProfilePhoto(localUri: string): Promise<string> {
@@ -90,7 +108,7 @@ export async function upsertMyProfile(input: {
   const { data, error } = await supabase
     .from('profiles')
     .upsert(row, { onConflict: 'id' })
-    .select('id, name, photo_url, photos, bio, interests, age')
+    .select('id, name, photo_url, photos, bio, interests, age, hide_message_preview')
     .single();
 
   if (error) throw error;
@@ -102,5 +120,6 @@ export async function upsertMyProfile(input: {
     bio: data.bio ?? '',
     interests: Array.isArray(data.interests) ? data.interests : [],
     age: typeof data.age === 'number' ? data.age : null,
+    hideMessagePreview: data.hide_message_preview === true,
   };
 }

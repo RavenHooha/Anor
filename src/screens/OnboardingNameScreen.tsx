@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { colors, spacing, radius, typography } from '../theme';
 import StepIndicator from '../components/StepIndicator';
@@ -22,6 +23,7 @@ export default function OnboardingNameScreen({ navigation }: Props) {
   const [name, setName] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [permissionError, setPermissionError] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   const pickPhoto = async () => {
     setPermissionError(false);
@@ -40,7 +42,7 @@ export default function OnboardingNameScreen({ navigation }: Props) {
     }
   };
 
-  const canContinue = name.trim().length > 0 && !!photoUri;
+  const canContinue = name.trim().length > 0 && !!photoUri && agreed;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -88,6 +90,21 @@ export default function OnboardingNameScreen({ navigation }: Props) {
             returnKeyType="done"
             maxLength={40}
           />
+
+          <Pressable
+            onPress={() => setAgreed(!agreed)}
+            style={styles.tosRow}
+            hitSlop={4}
+          >
+            <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
+              {agreed && (
+                <Ionicons name="checkmark" size={14} color={colors.background} />
+              )}
+            </View>
+            <Text style={styles.tosText}>
+              I'm 18 or older and agree to Anor's terms of use.
+            </Text>
+          </Pressable>
 
           <View style={styles.spacer} />
 
@@ -162,6 +179,31 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 16,
     marginTop: spacing.sm,
+  },
+  tosRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  checkboxChecked: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  tosText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    flex: 1,
   },
   spacer: { flex: 1 },
   cta: {
