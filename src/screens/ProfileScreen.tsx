@@ -206,27 +206,31 @@ export default function ProfileScreen() {
           <InterestChips interests={profile.interests} align="center" />
         )}
 
-        <Pressable
-          onPress={() => navigation.navigate('EditProfile')}
-          style={({ pressed }) => [
-            styles.editBtn,
-            pressed && styles.editBtnPressed,
-          ]}
-        >
-          <Ionicons name="pencil-outline" size={16} color={colors.secondary} />
-          <Text style={styles.editLabel}>Edit profile</Text>
-        </Pressable>
+        <View style={styles.actionRow}>
+          <Pressable
+            onPress={() => navigation.navigate('EditProfile')}
+            style={({ pressed }) => [
+              styles.actionBtn,
+              styles.editBtn,
+              pressed && styles.editBtnPressed,
+            ]}
+          >
+            <Ionicons name="pencil-outline" size={16} color={colors.secondary} />
+            <Text style={styles.editLabel}>Edit profile</Text>
+          </Pressable>
 
-        <Pressable
-          onPress={onShare}
-          style={({ pressed }) => [
-            styles.shareBtn,
-            pressed && styles.shareBtnPressed,
-          ]}
-        >
-          <Ionicons name="share-outline" size={16} color={colors.background} />
-          <Text style={styles.shareLabel}>Invite a friend</Text>
-        </Pressable>
+          <Pressable
+            onPress={onShare}
+            style={({ pressed }) => [
+              styles.actionBtn,
+              styles.shareBtn,
+              pressed && styles.shareBtnPressed,
+            ]}
+          >
+            <Ionicons name="share-outline" size={16} color={colors.background} />
+            <Text style={styles.shareLabel}>Invite a friend</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.spacer} />
 
@@ -376,31 +380,27 @@ const styles = StyleSheet.create({
   },
   signOutPressed: { borderColor: colors.textMuted },
   signOutLabel: { color: colors.textSecondary, fontSize: 16, fontWeight: '500' },
-  editBtn: {
+  actionRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  actionBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.secondary,
     paddingVertical: spacing.sm,
     borderRadius: radius.pill,
-    alignSelf: 'center',
-    paddingHorizontal: spacing.lg,
+  },
+  editBtn: {
+    borderWidth: 1,
+    borderColor: colors.secondary,
   },
   editBtnPressed: { backgroundColor: colors.surfaceElevated },
   editLabel: { color: colors.secondary, fontSize: 14, fontWeight: '600' },
-  shareBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-    alignSelf: 'center',
-    paddingHorizontal: spacing.lg,
-  },
+  shareBtn: { backgroundColor: colors.primary },
   shareBtnPressed: { backgroundColor: colors.primaryDim },
   shareLabel: { color: colors.background, fontSize: 14, fontWeight: '600' },
   badgeRow: { alignItems: 'center', marginTop: -spacing.sm },
