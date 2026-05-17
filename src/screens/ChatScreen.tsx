@@ -307,7 +307,11 @@ const styles = StyleSheet.create({
   },
   avatar: { width: '100%', height: '100%' },
   headerName: { ...typography.title },
-  openerNote: { ...typography.caption, color: colors.textMuted },
+  openerNote: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: spacing.md,
+  },
   openerBubble: {
     backgroundColor: colors.surface,
     borderLeftWidth: 3,
@@ -317,6 +321,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     maxWidth: '85%',
     gap: 2,
+    marginTop: spacing.md,
   },
   openerWho: { ...typography.caption, color: colors.textMuted },
   openerText: { ...typography.body, color: colors.textPrimary, fontStyle: 'italic' },
