@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Anor",
-    "slug": "Ember",
+    "slug": "anor",
     "scheme": "anor",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -68,7 +68,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "ee8db5c3-6036-4686-a57e-8c2cda90e315"
+        "projectId": "6444dc22-8615-4a6a-bf8b-24821eef1f66"
       }
     },
     "owner": "ravenhooha"
