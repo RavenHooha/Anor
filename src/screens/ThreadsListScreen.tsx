@@ -7,6 +7,7 @@ import {
   StyleSheet,
   FlatList,
   RefreshControl,
+  DeviceEventEmitter,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -44,6 +45,13 @@ export default function ThreadsListScreen() {
 
   useEffect(() => {
     return subscribeToMyThreadChanges(load);
+  }, [load]);
+
+  // Refetch when a block lands (the optimistic-close in Chat/UserProfile
+  // races ahead of the network insert; this catches the late completion).
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('blockChanged', load);
+    return () => sub.remove();
   }, [load]);
 
   // Re-fetch whenever the screen gains focus (e.g. returning from a chat

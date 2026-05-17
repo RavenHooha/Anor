@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  DeviceEventEmitter,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -88,12 +89,14 @@ export default function ChatScreen({ route, navigation }: Props) {
             style: 'destructive',
             onPress: () => {
               navigation.goBack();
-              blockUser(otherId).catch((e) => {
-                Alert.alert(
-                  'Block failed',
-                  e instanceof Error ? e.message : 'Try again.',
-                );
-              });
+              blockUser(otherId)
+                .then(() => DeviceEventEmitter.emit('blockChanged'))
+                .catch((e) => {
+                  Alert.alert(
+                    'Block failed',
+                    e instanceof Error ? e.message : 'Try again.',
+                  );
+                });
             },
           },
         ],

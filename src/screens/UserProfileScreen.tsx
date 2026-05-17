@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  DeviceEventEmitter,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
 import { STATUS_BY_ID } from '../types/status';
@@ -61,11 +70,11 @@ export default function UserProfileScreen({ route, navigation }: Props) {
   const messageBusy = pending === 'message';
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
+    <SafeAreaView style={styles.scroll} edges={['bottom']}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
       <PhotoGalleryViewer
         photos={user.photos.length > 0 ? user.photos : user.photoUrl ? [user.photoUrl] : []}
         aspectRatio={1}
@@ -153,15 +162,17 @@ export default function UserProfileScreen({ route, navigation }: Props) {
                 text: 'Block',
                 style: 'destructive',
                 onPress: () => {
-                  // Optimistic close — block in background, surface a
-                  // global Alert only if the network insert fails.
+                  // Optimistic close — block in background. On success,
+                  // emit so dependent screens (ThreadsList, Home) refetch.
                   navigation.goBack();
-                  blockUser(user.id).catch((e) => {
-                    Alert.alert(
-                      'Block failed',
-                      e instanceof Error ? e.message : 'Try again.',
-                    );
-                  });
+                  blockUser(user.id)
+                    .then(() => DeviceEventEmitter.emit('blockChanged'))
+                    .catch((e) => {
+                      Alert.alert(
+                        'Block failed',
+                        e instanceof Error ? e.message : 'Try again.',
+                      );
+                    });
                 },
               },
             ],
@@ -175,13 +186,14 @@ export default function UserProfileScreen({ route, navigation }: Props) {
         <Text style={styles.blockLabel}>Block {user.name}</Text>
       </Pressable>
 
-      <MessageComposerModal
-        visible={composerOpen}
-        recipientName={user.name}
-        onCancel={() => setComposerOpen(false)}
-        onSend={onSendMessage}
-      />
-    </ScrollView>
+        <MessageComposerModal
+          visible={composerOpen}
+          recipientName={user.name}
+          onCancel={() => setComposerOpen(false)}
+          onSend={onSendMessage}
+        />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
