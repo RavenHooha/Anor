@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_RADIUS_M, RADIUS_PRESETS } from '../data/nearby';
 
-const KEY = 'ember.radius';
+const KEY = 'anor.radius';
 const VALID = new Set(RADIUS_PRESETS.map((p) => p.meters));
 
 export async function loadRadius(): Promise<number> {

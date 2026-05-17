@@ -3,8 +3,8 @@ import type { EventSubscription } from 'react-native';
 import BleManager from 'react-native-ble-manager';
 import BLEAdvertiser from 'react-native-ble-advertiser';
 import {
-  EMBER_SERVICE_UUID,
-  EMBER_COMPANY_ID,
+  ANOR_SERVICE_UUID,
+  ANOR_COMPANY_ID,
   RSSI_WINDOW,
   RSSI_NEARBY_THRESHOLD,
   DEVICE_STALE_MS,
@@ -73,8 +73,8 @@ export async function startBle(): Promise<void> {
 
   // Advertise: be discoverable as an Anor device.
   try {
-    BLEAdvertiser.setCompanyId(EMBER_COMPANY_ID);
-    await BLEAdvertiser.broadcast(EMBER_SERVICE_UUID, [], {
+    BLEAdvertiser.setCompanyId(ANOR_COMPANY_ID);
+    await BLEAdvertiser.broadcast(ANOR_SERVICE_UUID, [], {
       includeDeviceName: false,
       includeTxPowerLevel: false,
       connectable: false,
@@ -93,7 +93,7 @@ export async function startBle(): Promise<void> {
 
   // seconds=0 = scan until stopScan(); allowDuplicates so RSSI updates flow per peripheral (iOS only flag, harmless on Android)
   await BleManager.scan({
-    serviceUUIDs: [EMBER_SERVICE_UUID],
+    serviceUUIDs: [ANOR_SERVICE_UUID],
     seconds: 0,
     allowDuplicates: true,
   });

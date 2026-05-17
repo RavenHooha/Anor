@@ -2,7 +2,7 @@
   "expo": {
     "name": "Anor",
     "slug": "Ember",
-    "scheme": "ember",
+    "scheme": "anor",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -32,7 +32,7 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ],
-      "package": "com.anonymous.Ember"
+      "package": "com.anonymous.Anor"
     },
     "web": {
       "favicon": "./assets/favicon.png"
