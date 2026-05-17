@@ -15,9 +15,6 @@ import PostHog from 'posthog-react-native';
 const KEY = process.env.EXPO_PUBLIC_POSTHOG_KEY;
 const HOST = 'https://us.i.posthog.com';
 
-// eslint-disable-next-line no-console
-console.log('[analytics] module loaded; KEY present:', !!KEY, 'prefix:', KEY?.slice(0, 8));
-
 let client: PostHog | null = null;
 
 /**
@@ -30,14 +27,8 @@ let client: PostHog | null = null;
  * flushed yet will not be sent.
  */
 export async function setAnalyticsOptedIn(value: boolean): Promise<void> {
-  // eslint-disable-next-line no-console
-  console.log('[analytics] setAnalyticsOptedIn called:', value, 'client exists:', !!client);
   if (value) {
-    if (!KEY) {
-      // eslint-disable-next-line no-console
-      console.warn('[analytics] EXPO_PUBLIC_POSTHOG_KEY missing — opt-in is no-op');
-      return;
-    }
+    if (!KEY) return;
     if (!client) {
       try {
         client = new PostHog(KEY, {
@@ -46,22 +37,11 @@ export async function setAnalyticsOptedIn(value: boolean): Promise<void> {
           flushAt: 10,
           flushInterval: 30_000,
         });
-        // eslint-disable-next-line no-console
-        console.log('[analytics] PostHog client instantiated');
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error('[analytics] PostHog init failed:', e);
+      } catch {
         return;
       }
     }
-    try {
-      await client.optIn();
-      // eslint-disable-next-line no-console
-      console.log('[analytics] optIn complete');
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error('[analytics] optIn failed:', e);
-    }
+    await client.optIn().catch(() => {});
   } else if (client) {
     await client.optOut();
   }
@@ -72,8 +52,6 @@ export async function setAnalyticsOptedIn(value: boolean): Promise<void> {
  * initialized. Properties should be small, primitive, and PII-free.
  */
 export function track(event: string, props?: Record<string, unknown>): void {
-  // eslint-disable-next-line no-console
-  console.log('[analytics] track:', event, 'client:', !!client);
   if (!client) return;
   client.capture(event, props);
 }

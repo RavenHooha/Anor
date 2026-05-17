@@ -125,7 +125,9 @@ record of processing), and onboarding any future contributors.
 **Credentials:**
 | Item | Where stored | Visibility |
 |------|--------------|------------|
-| `EXPO_PUBLIC_POSTHOG_KEY` (project token, starts `phc_…`) | EAS env vars | Plaintext (write-only client key; designed to be public) |
+| `EXPO_PUBLIC_POSTHOG_KEY` (project token, starts `phc_…`) | Local `.env` AND EAS env vars | Plaintext (write-only client key; designed to be public) |
+
+⚠️ **Known issue:** `eas update` in our current CLI version doesn't reliably load EAS env vars into the OTA bundle — it appears to only export vars from local `.env`. Workaround: keep `EXPO_PUBLIC_POSTHOG_KEY` in both the EAS env vars (for `eas build`) AND in local `.env` (for `eas update`). If you rotate the key, update both. Safe because the key is public-by-design — `.env` is gitignored anyway.
 
 **Rotation:** Dashboard → Project Settings → Project token → regenerate. Then update EAS env var and OTA-push (no rebuild needed).
 
