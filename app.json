@@ -71,7 +71,8 @@
           "color": "#ff6b35",
           "androidMode": "default"
         }
-      ]
+      ],
+      "@sentry/react-native"
     ],
     "extra": {
       "eas": {

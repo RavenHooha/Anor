@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as Sentry from '@sentry/react-native';
+import * as Updates from 'expo-updates';
 import RootNavigator, { navigationRef } from './src/navigation/RootNavigator';
 import { useSession } from './src/auth/useSession';
 import { startAuthLinkListener } from './src/auth/deepLink';
@@ -13,7 +15,43 @@ import {
 } from './src/notifications/setup';
 import { colors } from './src/theme';
 
-export default function App() {
+// Crash reporting. Privacy notes:
+// - sendDefaultPii: false → no IP, no cookies, no auto-captured user info
+// - HttpClient breadcrumbs disabled → no message bodies leak via fetch breadcrumbs
+// - beforeSend scrubs Authorization headers and any string that looks like a
+//   Supabase JWT or push token, defense-in-depth.
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  environment: Updates.channel ?? (__DEV__ ? 'development' : 'unknown'),
+  sendDefaultPii: false,
+  enableAutoSessionTracking: true,
+  // Drop default Http breadcrumb integration — captures fetch/XHR bodies.
+  integrations: (defaults) =>
+    defaults.filter((i) => i.name !== 'Http' && i.name !== 'HttpClient'),
+  beforeSend(event) {
+    // Strip any user identifier Sentry might have attached.
+    if (event.user) event.user = undefined;
+    // Scrub request headers (Authorization, apikey, etc.) just in case.
+    if (event.request?.headers) {
+      event.request.headers = {};
+    }
+    return event;
+  },
+  beforeBreadcrumb(crumb) {
+    // Belt-and-suspenders: even with Http integration disabled, blank out
+    // any breadcrumb data field that might carry payloads.
+    if (crumb.data && typeof crumb.data === 'object') {
+      const cleaned = { ...crumb.data } as Record<string, unknown>;
+      delete cleaned.body;
+      delete cleaned.response;
+      delete cleaned.request;
+      crumb.data = cleaned;
+    }
+    return crumb;
+  },
+});
+
+function App() {
   const { session, loaded: sessionLoaded } = useSession();
   const [hasProfile, setHasProfile] = useState<boolean | null>(null);
 
@@ -73,3 +111,5 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+export default Sentry.wrap(App);

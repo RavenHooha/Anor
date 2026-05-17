@@ -16,7 +16,7 @@ record of processing), and onboarding any future contributors.
 | **Apple APNs** | iOS push delivery | $99/yr Apple Dev | Not yet | Push token + notification payload |
 | **GitHub** | Source repo, docs hosting (raw URLs) | Free | Active | Code only, no user data |
 | **PostHog** | Product analytics | Free | Planned | Yes — anonymized per opt-in |
-| **Sentry** | Crash reporting | Free | Planned | Stack traces + device meta |
+| **Sentry** | Crash reporting | Free | Active | Stack traces + device meta (scrubbed) |
 | **Habitat for Humanity WNC** | Mission recipient (not an API) | — | Default recipient per MISSION.md | No |
 
 ---
@@ -127,17 +127,32 @@ record of processing), and onboarding any future contributors.
 
 ---
 
-## Sentry (planned)
+## Sentry
 
-**What:** Crash reporting with stack traces, breadcrumbs, device meta. Free tier is 5k errors/month.
+**What:** Crash reporting — stack traces, breadcrumbs, device meta when the app crashes. Free tier is 5k errors/month.
 
-**Setup notes:**
-- Sign up at [sentry.io](https://sentry.io), create React Native project, copy DSN.
-- Add `EXPO_PUBLIC_SENTRY_DSN` as EAS env var (Plaintext).
-- Run `npx @sentry/wizard@latest -i reactNative` — auto-configures EAS sourcemap upload.
-- **Requires native rebuild** (Sentry hooks into native crash handlers).
+**Org:** `ravenhooha`
+**Dashboard:** [ravenhooha.sentry.io](https://ravenhooha.sentry.io)
+**Account owner:** RavenHooha
 
-**Privacy:** Sentry sees stack traces and breadcrumbs. Configure to scrub user IDs and any message bodies from breadcrumbs before submission. Document in PRIVACY_POLICY.md.
+**Credentials:**
+| Item | Where stored | Visibility |
+|------|--------------|------------|
+| `EXPO_PUBLIC_SENTRY_DSN` | EAS env vars | Plaintext (designed public; only allows *sending* events) |
+| `SENTRY_AUTH_TOKEN` | EAS env vars | **Secret** (org:ci scope — uploads sourcemaps at build time) |
+| `SENTRY_ORG` and `SENTRY_PROJECT` | EAS env vars | Plaintext (used by metro config for sourcemap upload) |
+
+**Rotation:** Auth token: Sentry Settings → Organization Tokens → revoke + create new + update EAS env. DSN: Project Settings → Client Keys → "Regenerate" + update EAS env + rebuild.
+
+**Privacy scrubbing (configured in App.tsx Sentry.init):**
+- `sendDefaultPii: false` — no IP, cookies, or auto-captured user identifiers.
+- HttpClient breadcrumb integration disabled — no fetch/XHR bodies captured (would otherwise leak message text + Supabase auth tokens).
+- `beforeSend` strips `event.user` and `event.request.headers` defense-in-depth.
+- `beforeBreadcrumb` blanks `body`/`response`/`request` keys on any breadcrumb data object.
+
+**Environment tagging:** uses `Updates.channel` to tag each event as `development`, `preview`, or `production` so the dashboard can filter cleanly.
+
+**Sourcemap upload:** metro.config.js wraps the default Expo Metro config with `getSentryExpoConfig`, which uploads sourcemaps to Sentry on each EAS build using `SENTRY_AUTH_TOKEN` + `SENTRY_ORG` + `SENTRY_PROJECT`. Without this, release-build crash traces are minified gibberish.
 
 ---
 
