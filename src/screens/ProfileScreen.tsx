@@ -9,6 +9,7 @@ import {
   Switch,
   Alert,
   Linking,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -21,6 +22,7 @@ import {
   setHideMessagePreview,
   setAnalyticsOptedIn,
   deleteMyAccount,
+  exportMyData,
   type Profile,
 } from '../storage/profile';
 import { supabase } from '../lib/supabase';
@@ -35,6 +37,7 @@ export default function ProfileScreen() {
   const [signingOut, setSigningOut] = useState(false);
   const [savingPreview, setSavingPreview] = useState(false);
   const [savingAnalytics, setSavingAnalytics] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const navigation = useNavigation<Nav>();
 
   useFocusEffect(
@@ -79,6 +82,25 @@ export default function ProfileScreen() {
       Alert.alert('Could not save', e instanceof Error ? e.message : 'Try again.');
     } finally {
       setSavingAnalytics(false);
+    }
+  };
+
+  const onExportData = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const data = await exportMyData();
+      await Share.share({
+        message: JSON.stringify(data, null, 2),
+        title: 'Anor data export',
+      });
+    } catch (e) {
+      Alert.alert(
+        'Export failed',
+        e instanceof Error ? e.message : 'Try again.',
+      );
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -226,6 +248,20 @@ export default function ProfileScreen() {
         >
           <Text style={styles.linkLabel}>Privacy policy</Text>
           <Ionicons name="open-outline" size={16} color={colors.textMuted} />
+        </Pressable>
+
+        <Pressable
+          onPress={onExportData}
+          disabled={exporting}
+          style={({ pressed }) => [
+            styles.linkRow,
+            pressed && !exporting && { opacity: 0.6 },
+          ]}
+        >
+          <Text style={styles.linkLabel}>
+            {exporting ? 'Preparing…' : 'Download my data'}
+          </Text>
+          <Ionicons name="download-outline" size={16} color={colors.textMuted} />
         </Pressable>
 
         <Pressable

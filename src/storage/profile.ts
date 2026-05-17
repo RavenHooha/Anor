@@ -66,6 +66,12 @@ export async function deleteMyAccount(): Promise<void> {
   if (error) throw error;
 }
 
+export async function exportMyData(): Promise<unknown> {
+  const { data, error } = await supabase.rpc('export_my_data');
+  if (error) throw error;
+  return data;
+}
+
 export async function uploadProfilePhoto(localUri: string): Promise<string> {
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData.user?.id;

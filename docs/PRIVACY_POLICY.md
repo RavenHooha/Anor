@@ -111,13 +111,35 @@ restrict processing. Contact us at the address below to exercise these.
 
 ## 6. Data retention
 
-We keep your data while your account exists. When you delete your
-account, your profile and personal data are removed from active systems
-immediately and from backups within 30 days.
+Anor practices **data minimization** — we keep the minimum data needed
+to operate the service, and proactively delete data on a schedule
+rather than holding it forever. Specifically:
 
-Aggregated analytics derived from check-ins you contributed before
-deletion may persist in already-computed aggregate metrics, but no
-identifiable trace remains.
+- **Messages and threads** are automatically deleted **90 days after
+  the last message in a thread**. There is no opt-out; conversations
+  you'd like to keep should be screenshot or saved outside the app.
+- **Venue check-ins** (for users who opted in to analytics) are rolled
+  up into **anonymous monthly aggregates** ("47 users tagged this
+  venue") and the individual records deleted. After rollup, your
+  individual venue history no longer exists in our systems.
+- **Audit log entries** (records of actions like blocks and reports)
+  are kept for **90 days**, then deleted.
+- **Resolved reports** are kept for **30 days after review**, then
+  deleted.
+- **Profile data** (name, photos, bio, interests, age) is kept while
+  your account is active.
+- **Blocks** are kept indefinitely while your account is active (we
+  need to enforce them).
+
+When you delete your account, all your data is removed from active
+systems immediately and from backups within 30 days. Aggregated
+analytics from check-ins contributed before deletion may persist in
+already-computed aggregates, but no individually identifiable trace
+remains.
+
+You can download a copy of everything we currently have on you at any
+time via Settings → Download my data. Because of the minimization
+policies above, that export is small by design.
 
 ## 7. Children's privacy
 
