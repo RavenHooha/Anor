@@ -16,4 +16,5 @@ export type RootStackParamList = {
   Chat: { threadId: string };
   EditProfile: undefined;
   BlockedUsers: undefined;
+  Settings: undefined;
 };

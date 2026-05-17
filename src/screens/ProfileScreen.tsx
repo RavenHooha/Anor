@@ -6,9 +6,6 @@ import {
   Pressable,
   StyleSheet,
   ScrollView,
-  Switch,
-  Alert,
-  Linking,
   Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,25 +16,9 @@ import { colors, spacing, radius, typography } from '../theme';
 import InterestChips from '../components/InterestChips';
 import FoundingBadge from '../components/FoundingBadge';
 import { isFoundingMember } from '../lib/founding';
-import {
-  getMyProfile,
-  setHideMessagePreview,
-  setAnalyticsOptedIn,
-  deleteMyAccount,
-  exportMyData,
-  type Profile,
-} from '../storage/profile';
-import {
-  setAnalyticsOptedIn as setAnalyticsOptedInClient,
-  track,
-} from '../lib/analytics';
-import { supabase } from '../lib/supabase';
-import {
-  TOS_URL,
-  PRIVACY_POLICY_URL,
-  SHARE_MESSAGE,
-  supportMailto,
-} from '../lib/links';
+import { getMyProfile, type Profile } from '../storage/profile';
+import { track } from '../lib/analytics';
+import { SHARE_MESSAGE } from '../lib/links';
 import type { RootStackParamList } from '../navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -45,10 +26,6 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
-  const [savingPreview, setSavingPreview] = useState(false);
-  const [savingAnalytics, setSavingAnalytics] = useState(false);
-  const [exporting, setExporting] = useState(false);
   const navigation = useNavigation<Nav>();
 
   useFocusEffect(
@@ -60,64 +37,6 @@ export default function ProfileScreen() {
     }, []),
   );
 
-  const onSignOut = async () => {
-    if (signingOut) return;
-    setSigningOut(true);
-    await supabase.auth.signOut().catch(() => {});
-    // App.tsx auth gate will react to the session change and reroute to AuthScreen.
-  };
-
-  const onTogglePreview = async (next: boolean) => {
-    if (!profile || savingPreview) return;
-    setSavingPreview(true);
-    // Optimistic — flip locally, revert on error
-    setProfile({ ...profile, hideMessagePreview: next });
-    try {
-      await setHideMessagePreview(next);
-    } catch (e) {
-      setProfile({ ...profile, hideMessagePreview: !next });
-      Alert.alert('Could not save', e instanceof Error ? e.message : 'Try again.');
-    } finally {
-      setSavingPreview(false);
-    }
-  };
-
-  const onToggleAnalytics = async (next: boolean) => {
-    if (!profile || savingAnalytics) return;
-    setSavingAnalytics(true);
-    setProfile({ ...profile, analyticsOptedIn: next });
-    try {
-      await setAnalyticsOptedIn(next);
-      // Sync the SDK state too — opt-in instantiates PostHog and starts
-      // capturing; opt-out tells the SDK to stop.
-      await setAnalyticsOptedInClient(next);
-    } catch (e) {
-      setProfile({ ...profile, analyticsOptedIn: !next });
-      Alert.alert('Could not save', e instanceof Error ? e.message : 'Try again.');
-    } finally {
-      setSavingAnalytics(false);
-    }
-  };
-
-  const onExportData = async () => {
-    if (exporting) return;
-    setExporting(true);
-    try {
-      const data = await exportMyData();
-      await Share.share({
-        message: JSON.stringify(data, null, 2),
-        title: 'Anor data export',
-      });
-    } catch (e) {
-      Alert.alert(
-        'Export failed',
-        e instanceof Error ? e.message : 'Try again.',
-      );
-    } finally {
-      setExporting(false);
-    }
-  };
-
   const onShare = async () => {
     try {
       const result = await Share.share({
@@ -128,46 +47,8 @@ export default function ProfileScreen() {
         track('shared_app');
       }
     } catch {
-      // Share sheet cancelled or unavailable — nothing to do.
+      // Share sheet cancelled or unavailable.
     }
-  };
-
-  const onDeleteAccount = () => {
-    Alert.alert(
-      'Delete your Anor account?',
-      'This permanently removes your profile, photos, messages, blocks, and check-ins. This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert(
-              'Really delete?',
-              'Last chance — there is no recovery after this.',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Yes, delete forever',
-                  style: 'destructive',
-                  onPress: async () => {
-                    try {
-                      await deleteMyAccount();
-                      await supabase.auth.signOut().catch(() => {});
-                    } catch (e) {
-                      Alert.alert(
-                        'Delete failed',
-                        e instanceof Error ? e.message : 'Try again.',
-                      );
-                    }
-                  },
-                },
-              ],
-            );
-          },
-        },
-      ],
-    );
   };
 
   if (!loaded) {
@@ -176,6 +57,16 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <View style={styles.headerBar}>
+        <Pressable
+          onPress={() => navigation.navigate('Settings')}
+          hitSlop={12}
+          style={({ pressed }) => [styles.gearBtn, pressed && { opacity: 0.6 }]}
+        >
+          <Ionicons name="settings-outline" size={22} color={colors.textSecondary} />
+        </Pressable>
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -249,107 +140,6 @@ export default function ProfileScreen() {
             <Text style={styles.shareLabel}>Invite a friend</Text>
           </Pressable>
         </View>
-
-        <View style={styles.spacer} />
-
-        <Pressable
-          onPress={() => navigation.navigate('BlockedUsers')}
-          style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.6 }]}
-        >
-          <Text style={styles.linkLabel}>Manage blocked users</Text>
-          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-        </Pressable>
-
-        <View style={styles.toggleRow}>
-          <View style={styles.toggleText}>
-            <Text style={styles.linkLabel}>Hide message previews</Text>
-            <Text style={styles.toggleHint}>
-              Notifications show "You have a new message" instead of the sender and text.
-            </Text>
-          </View>
-          <Switch
-            value={profile?.hideMessagePreview ?? false}
-            onValueChange={onTogglePreview}
-            disabled={savingPreview || !profile}
-            trackColor={{ false: colors.surfaceElevated, true: colors.primary }}
-            thumbColor={colors.textPrimary}
-          />
-        </View>
-
-        <View style={styles.toggleRow}>
-          <View style={styles.toggleText}>
-            <Text style={styles.linkLabel}>Help improve Anor</Text>
-            <Text style={styles.toggleHint}>
-              Share your venue check-ins anonymously so we can show useful trends
-              (no one ever sees your individual movements). Off by default.
-            </Text>
-          </View>
-          <Switch
-            value={profile?.analyticsOptedIn ?? false}
-            onValueChange={onToggleAnalytics}
-            disabled={savingAnalytics || !profile}
-            trackColor={{ false: colors.surfaceElevated, true: colors.primary }}
-            thumbColor={colors.textPrimary}
-          />
-        </View>
-
-        <Pressable
-          onPress={() => Linking.openURL(supportMailto())}
-          style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.6 }]}
-        >
-          <Text style={styles.linkLabel}>Contact support</Text>
-          <Ionicons name="open-outline" size={16} color={colors.textMuted} />
-        </Pressable>
-
-        <Pressable
-          onPress={() => Linking.openURL(TOS_URL)}
-          style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.6 }]}
-        >
-          <Text style={styles.linkLabel}>Terms of use</Text>
-          <Ionicons name="open-outline" size={16} color={colors.textMuted} />
-        </Pressable>
-
-        <Pressable
-          onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
-          style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.6 }]}
-        >
-          <Text style={styles.linkLabel}>Privacy policy</Text>
-          <Ionicons name="open-outline" size={16} color={colors.textMuted} />
-        </Pressable>
-
-        <Pressable
-          onPress={onExportData}
-          disabled={exporting}
-          style={({ pressed }) => [
-            styles.linkRow,
-            pressed && !exporting && { opacity: 0.6 },
-          ]}
-        >
-          <Text style={styles.linkLabel}>
-            {exporting ? 'Preparing…' : 'Download my data'}
-          </Text>
-          <Ionicons name="download-outline" size={16} color={colors.textMuted} />
-        </Pressable>
-
-        <Pressable
-          onPress={onSignOut}
-          disabled={signingOut}
-          style={({ pressed }) => [
-            styles.signOutBtn,
-            pressed && !signingOut && styles.signOutPressed,
-          ]}
-        >
-          <Text style={styles.signOutLabel}>
-            {signingOut ? 'Signing out…' : 'Sign out'}
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={onDeleteAccount}
-          style={({ pressed }) => [styles.deleteBtn, pressed && { opacity: 0.6 }]}
-        >
-          <Text style={styles.deleteLabel}>Delete account</Text>
-        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -357,6 +147,22 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
+  headerBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+  },
+  gearBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   content: {
     flexGrow: 1,
     paddingHorizontal: spacing.lg,
@@ -389,13 +195,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.background,
   },
-  joinedText: {
-    ...typography.caption,
-    color: colors.textMuted,
-    textAlign: 'center',
-    fontSize: 12,
-    marginTop: -spacing.xs,
-  },
   name: {
     ...typography.title,
     fontSize: 26,
@@ -407,20 +206,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: spacing.md,
   },
-  spacer: { flex: 1 },
-  signOutBtn: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: spacing.md,
-    borderRadius: radius.pill,
-    alignItems: 'center',
+  badgeRow: { alignItems: 'center', marginTop: -spacing.sm },
+  joinedText: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textAlign: 'center',
+    fontSize: 12,
+    marginTop: -spacing.xs,
   },
-  signOutPressed: { borderColor: colors.textMuted },
-  signOutLabel: { color: colors.textSecondary, fontSize: 16, fontWeight: '500' },
   actionRow: {
     flexDirection: 'row',
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
+    marginTop: spacing.md,
   },
   actionBtn: {
     flex: 1,
@@ -440,36 +238,4 @@ const styles = StyleSheet.create({
   shareBtn: { backgroundColor: colors.primary },
   shareBtnPressed: { backgroundColor: colors.primaryDim },
   shareLabel: { color: colors.background, fontSize: 14, fontWeight: '600' },
-  badgeRow: { alignItems: 'center', marginTop: -spacing.sm },
-  linkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  linkLabel: { ...typography.body, color: colors.textSecondary },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-    paddingVertical: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  toggleText: { flex: 1, gap: 2 },
-  toggleHint: { ...typography.caption, color: colors.textMuted },
-  deleteBtn: {
-    alignSelf: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    marginTop: spacing.md,
-  },
-  deleteLabel: {
-    ...typography.caption,
-    color: colors.textMuted,
-    textDecorationLine: 'underline',
-  },
 });

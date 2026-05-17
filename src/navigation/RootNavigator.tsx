@@ -11,6 +11,7 @@ import UserProfileScreen from '../screens/UserProfileScreen';
 import ChatScreen from '../screens/ChatScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import BlockedUsersScreen from '../screens/BlockedUsersScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 import MainTabs from './MainTabs';
 import { colors } from '../theme';
 import type { RootStackParamList } from './types';
@@ -104,6 +105,19 @@ export default function RootNavigator({ isAuthed, hasProfile }: Props) {
                 headerTitle: '',
                 headerStyle: { backgroundColor: colors.background },
                 headerTintColor: colors.textPrimary,
+                headerShadowVisible: false,
+                headerBackTitle: '',
+              }}
+            />
+            <Stack.Screen
+              name="Settings"
+              component={SettingsScreen}
+              options={{
+                headerShown: true,
+                headerTitle: 'Settings',
+                headerStyle: { backgroundColor: colors.background },
+                headerTintColor: colors.textPrimary,
+                headerTitleStyle: { color: colors.textPrimary },
                 headerShadowVisible: false,
                 headerBackTitle: '',
               }}
