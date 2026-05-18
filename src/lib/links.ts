@@ -1,14 +1,10 @@
 // Central place for external URLs and the support contact path.
 // Update these when you have a real domain + support inbox.
 
-// Until anor.app (or wherever) is live, point at GitHub-rendered markdown.
-// GitHub keeps these reachable for anyone with the repo URL; works fine for
-// a friends-test. For Play Store / App Store submission, host them on your
-// own domain instead — stores want a stable URL you control.
-export const TOS_URL =
-  'https://github.com/RavenHooha/Anor/blob/main/docs/TOS.md';
-export const PRIVACY_POLICY_URL =
-  'https://github.com/RavenHooha/Anor/blob/main/docs/PRIVACY_POLICY.md';
+// Served by the anor-site Astro project, deployed to meetanor.com via
+// Cloudflare Pages. Source lives in a sibling GitHub repo (anor-site).
+export const TOS_URL = 'https://meetanor.com/terms';
+export const PRIVACY_POLICY_URL = 'https://meetanor.com/privacy';
 
 // support@meetanor.com is forwarded via Cloudflare Email Routing to the
 // founder's personal inbox. To change destination: Cloudflare dashboard
@@ -19,10 +15,9 @@ export function supportMailto(subject = 'Anor support'): string {
   return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`;
 }
 
-// Where the "Share Anor" button sends people. Currently points at the
-// GitHub repo as a stable, public landing; replace with anor.app/install
-// (or wherever you host) once the marketing site exists.
-export const INSTALL_URL = 'https://github.com/RavenHooha/Anor';
+// Where the "Share Anor" button sends people — the install page on
+// the marketing site.
+export const INSTALL_URL = 'https://meetanor.com/install';
 
 // Default copy for the share sheet. Keep it short, human, and benefit-led —
 // people forward what reads like a real recommendation, not marketing copy.

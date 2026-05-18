@@ -200,12 +200,11 @@ site hosting via Cloudflare Pages for the marketing landing page,
   **Email** → **Email Routing** → edit routes. Verification email to
   new destination required.
 
-**Pending URL swaps (still pointing at GitHub):**
-- `INSTALL_URL` in `src/lib/links.ts` — points at the repo. Swap to
-  `https://meetanor.com/install` once the landing page ships.
-- `TOS_URL` and `PRIVACY_POLICY_URL` — currently GitHub raw markdown
-  links. Swap to `https://meetanor.com/terms` and
-  `https://meetanor.com/privacy` once the Pages site renders them.
+**Pages deployment:** marketing site is deployed via Cloudflare Pages
+from the [anor-site](https://github.com/RavenHooha/anor-site) repo.
+Auto-deploys on push to `main`. Custom domain `meetanor.com` configured.
+App constants in `src/lib/links.ts` (`INSTALL_URL`, `TOS_URL`,
+`PRIVACY_POLICY_URL`) all point at meetanor.com URLs.
 
 **Privacy:** No user data sees Cloudflare. Domain registration data
 (WHOIS) is privacy-protected by default — Cloudflare Registrar
