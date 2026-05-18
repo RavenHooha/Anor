@@ -180,4 +180,4 @@ policy.
 
 ## 11. Contact
 
-Questions, requests, or complaints? Email **support@anor.app**.
+Questions, requests, or complaints? Email **support@meetanor.com**.

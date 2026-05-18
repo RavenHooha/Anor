@@ -15,6 +15,7 @@ record of processing), and onboarding any future contributors.
 | **Firebase (FCM)** | Android push delivery | Free (Spark) | Active | Push token + notification payload |
 | **Apple APNs** | iOS push delivery | $99/yr Apple Dev | Not yet | Push token + notification payload |
 | **GitHub** | Source repo, docs hosting (raw URLs) | Free | Active | Code only, no user data |
+| **Cloudflare** | Domain (meetanor.com), email forwarding, future Pages hosting | Free + $10/yr domain | Active | No |
 | **PostHog** | Product analytics | Free | Active | Only for opted-in users |
 | **Sentry** | Crash reporting | Free | Active | Stack traces + device meta (scrubbed) |
 | **Habitat for Humanity WNC** | Mission recipient (not an API) | — | Default recipient per MISSION.md | No |
@@ -178,6 +179,37 @@ record of processing), and onboarding any future contributors.
 **Sourcemap upload:** metro.config.js wraps the default Expo Metro config with `getSentryExpoConfig`, which uploads sourcemaps to Sentry on each EAS build using `SENTRY_AUTH_TOKEN` + `SENTRY_ORG` + `SENTRY_PROJECT`. Without this, release-build crash traces are minified gibberish.
 
 ⚠️ **Pending native rebuild:** the currently-installed APK on test devices predates the `@sentry/react-native` install. JS-level Sentry code runs (no crash on launch) but the native crash handlers aren't bundled — so a hard crash from native code won't be captured. **Fixes automatically on the next `eas build:dev`**. No urgency unless you start getting "the app just died with no error" reports.
+
+---
+
+## Cloudflare
+
+**What:** Domain registrar for `meetanor.com`, email forwarding for
+`support@meetanor.com` → founder's personal inbox, and (planned) static
+site hosting via Cloudflare Pages for the marketing landing page,
+`/tos`, `/privacy`, and `/install`.
+
+**Dashboard:** [dash.cloudflare.com](https://dash.cloudflare.com)
+**Account owner:** RavenHooha
+**Domain:** `meetanor.com` (renews ~$10/yr at cost)
+**Account type:** Personal
+
+**Email Routing:**
+- `support@meetanor.com` → forwards to founder's personal inbox.
+- To re-route or add more addresses: Cloudflare → meetanor.com →
+  **Email** → **Email Routing** → edit routes. Verification email to
+  new destination required.
+
+**Pending URL swaps (still pointing at GitHub):**
+- `INSTALL_URL` in `src/lib/links.ts` — points at the repo. Swap to
+  `https://meetanor.com/install` once the landing page ships.
+- `TOS_URL` and `PRIVACY_POLICY_URL` — currently GitHub raw markdown
+  links. Swap to `https://meetanor.com/terms` and
+  `https://meetanor.com/privacy` once the Pages site renders them.
+
+**Privacy:** No user data sees Cloudflare. Domain registration data
+(WHOIS) is privacy-protected by default — Cloudflare Registrar
+includes free WHOIS privacy.
 
 ---
 

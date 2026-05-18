@@ -118,4 +118,4 @@ account.
 
 ## 12. Contact
 
-Questions about these Terms? Email **support@anor.app**.
+Questions about these Terms? Email **support@meetanor.com**.

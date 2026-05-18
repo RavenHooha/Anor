@@ -10,9 +10,10 @@ export const TOS_URL =
 export const PRIVACY_POLICY_URL =
   'https://github.com/RavenHooha/Anor/blob/main/docs/PRIVACY_POLICY.md';
 
-// Placeholder support address. Set up a real inbox (or forward to your
-// personal email) before sharing the app with anyone outside your circle.
-export const SUPPORT_EMAIL = 'support@anor.app';
+// support@meetanor.com is forwarded via Cloudflare Email Routing to the
+// founder's personal inbox. To change destination: Cloudflare dashboard
+// → meetanor.com → Email → Email Routing → edit the route.
+export const SUPPORT_EMAIL = 'support@meetanor.com';
 
 export function supportMailto(subject = 'Anor support'): string {
   return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`;
