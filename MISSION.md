@@ -62,8 +62,11 @@ low-income and unhoused Americans.** The founder takes a salary, real
 operating costs are paid, a defined reinvestment ceiling allows growth,
 and everything left over goes to the mission.
 
-This is the Newman's Own model: personal sufficiency for the people
-running the company, then maximum mission impact with the rest.
+This is the Newman's Own model: the founder takes compensation
+comparable to a senior tech founder at a comparable-size company —
+but capped, so even if Anor becomes massively successful the founder
+never extracts the kind of wealth that a non-mission-driven version
+of the same company would. Everything past the cap goes to housing.
 
 Specifically:
 - **Primary recipient (default):** Habitat for Humanity, with priority
@@ -113,11 +116,10 @@ To prevent the model from collapsing into the founder taking
 everything as comp, "net profit" is defined as revenue minus the
 following — each capped, each public:
 
-> 1. **Founder compensation**, capped at a salary band reviewed
->    annually against market data (target: the median of NC tech-startup
->    founder salaries at comparable revenue tier, per BLS / Pave / Levels.fyi
->    or equivalent). Cannot exceed cap without a board-equivalent vote
->    and public disclosure in the annual giving report.
+> 1. **Founder compensation**, capped per the methodology below.
+>    Sliding floor scales with profitability; hard ceiling is bounded.
+>    Cap cannot be exceeded without a board-equivalent vote and public
+>    disclosure in the annual giving report.
 >
 > 2. **Employee and contractor compensation**, at fair market rates per
 >    role.
@@ -139,9 +141,61 @@ this year and give later" indefinitely. There's always a temptation to
 defer giving; the cap forces giving even during growth.
 
 The founder salary cap is the second critical guard. Without it, the
-"after sufficiency" model is a loophole. With it, "sufficiency" has a
-specific, defensible meaning — the founder makes what a founder at a
-similar company makes, no more.
+model collapses into "I take everything as comp." With it, the founder
+gets a real salary if Anor succeeds and a real-but-bounded salary if
+Anor succeeds enormously — but never becomes wealthy in the sense that
+tech founders typically do at scale.
+
+## Founder salary cap methodology
+
+The cap has two parts: a floor that scales with profitability and a
+ceiling that's bounded regardless of company size.
+
+**Hard ceiling: $250,000/year in 2026 dollars**, indexed annually to
+the US Bureau of Labor Statistics CPI-U. (Without indexing, $250k in
+2026 erodes to ~$150k purchasing power within 15 years; the indexing
+preserves the real value.) The ceiling is a hard cap — no carve-outs,
+no bonuses on top, no "founder fee" routed around it. When Anor's net
+profit grows past the point where the floor formula would exceed
+$250k, all the excess goes to housing instead of the founder.
+
+**Sliding floor:** during the years before the ceiling is reached, the
+founder's actual compensation is the lesser of:
+- 5-8% of trailing-year net profit, or
+- The hard ceiling above
+
+In practice, this means:
+
+| Anor net profit (annual) | Founder compensation | Going to housing |
+|--------------------------|----------------------|------------------|
+| $0-50k (scrappy survival) | $0-30k from savings or part-time work | Negligible |
+| $100k | $5-8k | $92-95k |
+| $500k | $25-40k | $460-475k |
+| $1M | $50-80k | $920-950k |
+| $5M | $250k (ceiling hits) | $4.75M |
+| $20M | $250k (ceiling stays) | $19.75M |
+| $50M | $250k (ceiling stays) | $49.75M |
+
+The shape of this is honest: the founder takes a real salary if Anor
+succeeds modestly, keeps that salary if Anor succeeds massively, but
+never becomes wealthy in the conventional sense. At $20M revenue, a
+typical tech founder would take home $3-5M+ per year through salary +
+dividends + equity events. Under this cap, the founder takes $250k and
+the other $19.75M goes to housing.
+
+**Comparables.** $250k is roughly:
+- 25-50% of what comparable VC-backed tech founders extract at this
+  scale
+- 50% of what the CEO of Habitat for Humanity International makes
+- ~2x median household income in Jackson County, NC (where the
+  founder lives), so it's comfortable but not extractive
+- Indexed to inflation, so it remains a real salary over decades
+
+**Revisions.** This cap and methodology can only be revised
+**upward** (more constraint on founder, more to mission) without
+public disclosure. Any change that increases founder take must be
+disclosed in the annual giving report with a documented business
+reason, and reverts automatically if not re-affirmed annually.
 
 ## Structure
 
