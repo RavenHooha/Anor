@@ -4,7 +4,10 @@ Until there's an admin UI, moderation runs through Supabase SQL Editor with
 the **service_role** key (the only role that can read `audit_log`,
 `reports.reviewer_notes`, or call the admin RPCs below).
 
-All write actions are logged to `audit_log`. Read actions are not.
+All write actions are logged to `audit_log`. Moderator views of message
+content via the web admin UI (`admin_view_user_messages`,
+`admin_view_thread`) are also logged. Other read actions (queue listing,
+profile/stats) are not.
 
 ---
 
