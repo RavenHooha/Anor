@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 export const REPORT_REASONS = [
   { id: 'harassment', label: 'Harassment', description: 'Threats, hate, or repeated unwanted contact' },
   { id: 'inappropriate_content', label: 'Inappropriate content', description: 'Sexual, violent, or graphic material' },
+  { id: 'child_safety', label: 'Child safety', description: 'User appears to be under 18, or content involving a minor' },
   { id: 'safety', label: 'Safety concern', description: 'I feel unsafe or this person may harm others' },
   { id: 'fake_profile', label: 'Fake profile', description: 'Impersonation, bots, or fake photos' },
   { id: 'spam', label: 'Spam', description: 'Unsolicited messages or scams' },
