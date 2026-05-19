@@ -1,6 +1,6 @@
 # Anor Mission
 
-_Last updated: 2026-05-17_
+_Last updated: 2026-05-19_
 
 This document is the founder's commitment to what Anor exists for beyond
 itself. It's load-bearing: every product decision, every monetization
@@ -69,11 +69,15 @@ never extracts the kind of wealth that a non-mission-driven version
 of the same company would. Everything past the cap goes to housing.
 
 Specifically:
-- **Primary recipient (default):** Habitat for Humanity, with priority
-  toward the chapter serving western North Carolina (currently Jackson
-  County). When Anor's user base extends beyond WNC, the recipient list
-  may broaden to chapters serving Anor's largest user-density regions —
-  but the rule is "local to our users," not "wherever convenient."
+- **Recipient(s):** Any housing-focused organization chosen via the
+  annual review (see allocation rule below). The current default is
+  Habitat for Humanity, with priority toward the chapter serving
+  western North Carolina (currently Jackson County). As Anor's user
+  base broadens, the list may grow to include other Habitat chapters
+  in user-density regions, other established housing nonprofits, or
+  (see Structure) an Anor-affiliated foundation that builds homes
+  directly. The rule is "housing, local to our users" — not
+  "wherever convenient."
 - **Allocation rule:** A board-equivalent decision (founder + any
   partners) reviews the recipient annually. The 100% commitment cannot
   be lowered; the cap on reinvestment cannot be raised without a
@@ -222,6 +226,15 @@ Path to that end-state:
    charitable foundation and transfer ownership of the operating PBC
    to the foundation. From this point on, the giving is structural,
    not discretionary.
+
+Once the foundation exists, it may operate either as a
+**grant-making entity** (directing profits to Habitat and other
+established housing nonprofits) or as a **direct operator** (the
+foundation itself builds or funds the building of homes — e.g., a
+tiny-house program in Jackson County). 100% of profits still flow
+to housing either way; the choice is which path delivers more
+housing per dollar at that stage, and is left to the foundation's
+first year of operation rather than locked here.
 
 **This path is incompatible with traditional venture capital.** VC
 returns are paid via equity appreciation and eventual liquidity events.
