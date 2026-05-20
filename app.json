@@ -34,10 +34,12 @@
         "android.permission.BLUETOOTH",
         "android.permission.BLUETOOTH_ADMIN",
         "android.permission.BLUETOOTH_ADVERTISE",
-        "android.permission.RECORD_AUDIO",
         "android.permission.BLUETOOTH_CONNECT",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
       ],
       "package": "com.meetanor.app"
     },

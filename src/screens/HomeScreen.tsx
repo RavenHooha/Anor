@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -232,13 +232,16 @@ function BleBanner({
   status: ReturnType<typeof useBleNearby>['status'];
   onRetry: () => void;
 }) {
+  // On iOS, BLE proximity isn't part of the experience (GPS-only). Don't
+  // surface an "Android-only" notice to every iOS user — just run quietly.
+  if (Platform.OS !== 'android') return null;
   if (status === 'scanning' || status === 'idle' || status === 'requesting') return null;
 
   const message =
     status === 'denied'
       ? 'Bluetooth permission denied. Tap to retry.'
       : status === 'unsupported'
-        ? 'Bluetooth proximity is Android-only for now.'
+        ? 'Bluetooth proximity is unavailable on this device.'
         : "Couldn't start Bluetooth. Tap to retry.";
 
   const tappable = status === 'denied' || status === 'error';

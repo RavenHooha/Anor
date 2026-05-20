@@ -96,6 +96,53 @@ First submission should over-disclose on App Privacy "Nutrition Label"
 and emphasize the moderation/reporting infrastructure already in
 place.
 
+### iOS BLE — updated feasibility (Tier 1 vs Tier 2)
+
+Earlier framing treated iOS BLE as a near-blocker. After auditing the
+actual code, that was too pessimistic. Two tiers:
+
+- **Tier 1 — ship iOS GPS-only.** BLE stays Android-only (it already
+  is: `startBle()` returns early when `Platform.OS !== 'android'`).
+  iOS users are discovered via `nearby()` / GPS. This removes the
+  BLE-build risk entirely and is the v1.
+- **Tier 2 — foreground BLE on iOS.** Genuinely viable as a follow-up,
+  not a rewrite. Revisit only if "same-room" RSSI precision proves to
+  materially beat GPS in real Android use.
+
+**Why Anor's BLE design already fits iOS** (three alignments):
+1. **Foreground-only** (`isBackgroundEnabled: false`) — sidesteps every
+   iOS *background* BLE limitation, which is where the real pain is.
+2. **No identity in the advertisement** — Anor broadcasts only a shared
+   service UUID, so iOS's "can't broadcast a payload in background"
+   restriction doesn't apply.
+3. **Minimal payload** — advertises the service UUID only, no device
+   name / manufacturer data / TX power (`service.ts` `broadcast(...)`),
+   so iOS advertisement-field truncation is a non-issue.
+
+**The one real engineering change Tier 2 needs — RSSI tuning.** iOS
+coalesces scan callbacks even with `allowDuplicates: true`, so the
+fixed 10-sample window (`RSSI_WINDOW`) fills slower and strong/medium/
+weak transitions lag. Fix is tuning, not library replacement:
+- Quick: platform-specific constants (smaller iOS window ~4) + add
+  hysteresis to `rssiToSignal` so labels don't flicker.
+- Better: replace the fixed-window average with a time-weighted
+  exponential moving average (EMA) — robust to both Android's noisy
+  high-frequency stream and iOS's sparse one, one algorithm.
+
+**The real build risk:** `react-native-ble-advertiser@0.0.17` is old
+and already patched. The risk is its iOS wrapper (CBPeripheralManager
+init, poweredOn handling, lifecycle) under RN 0.81 new arch — not the
+iOS BLE stack itself. De-risk cheaply with an EAS iOS *simulator* build
+(no paid Apple account needed, verifies compilation), then a physical-
+iPhone spike.
+
+**On-device test matrix (Tier 2 spike, real hardware only):**
+- Advertisement visibility: iPhone<->iPhone and iPhone<->Android, after
+  screen lock, app minimize, reopen, interruptions.
+- Lifecycle resilience: hot reload, background transitions, suspension
+  (old RN BLE wrappers commonly rot here).
+- RSSI cadence: how fast strong/medium/weak transitions feel vs Android.
+
 ## Legal / Structure
 
 ### Form the NC single-member LLC
