@@ -95,3 +95,60 @@ apps under guidelines 1.3 (safety) and 4.0 (minimum functionality).
 First submission should over-disclose on App Privacy "Nutrition Label"
 and emphasize the moderation/reporting infrastructure already in
 place.
+
+## Legal / Structure
+
+### Form the NC single-member LLC
+
+Anor currently operates with **no legal entity** — the founder is
+personally the operator. For a "strangers meet in person" app (the
+highest-liability consumer category), this is the single biggest
+exposure: the ToS disclaimers protect "Anor and its operators," but
+with no entity a claim from a meetup-gone-wrong can reach personal
+assets. The LLC is the actual liability shield; the ToS language is
+only the first line.
+
+**Why not blocking the closed test:** 12 testers poking at the app
+aren't meeting strangers in person — the real-world-harm risk only
+shows up once the public is using it to actually meet. So this gates
+*Production*, not the closed test.
+
+**Trigger:** before applying for / accepting Production access (do it
+during the 14-day closed-test window so it's in place in time).
+
+**Steps (founder can self-file, ~$125, ~30 min):**
+1. Check LLC name availability on the NC Secretary of State registry
+   (sosnc.gov) — e.g., "Anor LLC" or "Anor Technologies LLC".
+2. File Articles of Organization online ($125). Effective ~immediately.
+3. Get a free EIN from the IRS (irs.gov), instant online.
+4. Open a business bank account; route all Anor expenses (domain,
+   Supabase, EAS, Resend, Google/Apple dev accounts) through it.
+   Keeping LLC and personal funds separate is what *preserves* the
+   liability shield — commingling can pierce it.
+
+**Note:** This is step 1 of the MISSION.md structure path
+(LLC -> NC Public Benefit Corp at first revenue -> foundation-owned
+PBC at sustained profitability). Forming it starts the giving
+architecture, not just the liability protection.
+
+### Attorney review of ToS + Privacy Policy
+
+The Terms of Use and Privacy Policy are well-drafted templates but
+have **not** been reviewed by a lawyer. The limitation-of-liability
+($50 cap on a free app) and indemnification clauses are jurisdiction-
+specific and may not hold against a personal-injury claim. Fine for
+the closed test; a ~$500-1500 attorney pass is the responsible move
+before public launch.
+
+**Trigger:** before public/Production launch, ideally alongside or
+just after the LLC formation.
+
+### Business insurance (general liability / E&O)
+
+Not needed for the closed test. Worth getting quotes before scaling,
+given the in-person-meeting risk profile. The LLC + attorney-reviewed
+ToS + insurance are the three layers that actually close the
+liability gap; the ToS clause alone doesn't.
+
+**Trigger:** before meaningful public user volume, or if a
+mission-aligned funder/partner requires it.
