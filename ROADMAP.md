@@ -129,12 +129,17 @@ weak transitions lag. Fix is tuning, not library replacement:
   exponential moving average (EMA) — robust to both Android's noisy
   high-frequency stream and iOS's sparse one, one algorithm.
 
-**The real build risk:** `react-native-ble-advertiser@0.0.17` is old
-and already patched. The risk is its iOS wrapper (CBPeripheralManager
-init, poweredOn handling, lifecycle) under RN 0.81 new arch — not the
-iOS BLE stack itself. De-risk cheaply with an EAS iOS *simulator* build
-(no paid Apple account needed, verifies compilation), then a physical-
-iPhone spike.
+**The build risk — RESOLVED (verified 2026-05-20).** An EAS iOS
+*simulator* build (`development-simulator` profile, no paid Apple
+account) compiled clean — `react-native-ble-advertiser@0.0.17`
+(patched) and every other native module build under RN 0.81 new arch
+on iOS. No need to exclude the advertiser pod from iOS. The iOS port
+has no architectural blocker at the build layer; what remains is
+mechanical (Apple Developer account, signed build, APNs, App Store
+Connect, review). The one thing still *unverified* is **runtime BLE
+behavior on a physical iPhone** (CBPeripheralManager lifecycle, RSSI
+cadence) — that needs a real-device spike, but it's a Tier 2 concern,
+not a Tier 1 blocker.
 
 **On-device test matrix (Tier 2 spike, real hardware only):**
 - Advertisement visibility: iPhone<->iPhone and iPhone<->Android, after
