@@ -25,7 +25,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0F0809"
+        "backgroundColor": "#f64e1f"
       },
       "googleServicesFile": "./google-services.json",
       "edgeToEdgeEnabled": true,
