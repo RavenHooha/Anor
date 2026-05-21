@@ -40,6 +40,41 @@ any code is written.
 Could combine with date-night packages (already on MISSION.md's
 "rules in" list).
 
+## Product ideas
+
+Concepts to differentiate Anor from the crowded (and mostly dead)
+"nearby chat" category. None committed — captured while exploring the
+"what makes Anor unique" question. Unifying threads: a light-based
+identity system (sun / lanterns / "meet in the light") and
+privacy-as-architecture.
+
+### Flags (intent posts, not profiles)
+
+Instead of browsing people, plant a temporary, place-anchored flag of
+intent — "at Innovation Brewing til 8, open to company." Others respond
+to the flag, not the person. Reframes "meet strangers" (creepy) into
+"join someone already out and open" — a real-world bulletin board, not
+a dating grid. Ephemeral by nature (flags expire), which fits the
+data-minimization stance.
+
+### Regulars (check-in-anchored, privacy-preserving)
+
+"The strangers you already almost know" — surface people who frequent
+the same places you do, so you finally say hi to the person always at
+your coffee shop.
+
+**Privacy constraint (load-bearing):** the naive version — silently
+logging everyone's location history server-side to compute overlaps —
+is exactly the surveillance the privacy contract refuses. Do NOT build
+that. The acceptable version anchors to **explicit, opt-in venue
+check-ins** (which already exist and roll up to anonymous aggregates):
+"regular" emerges from a user's own deliberate, deletable check-ins,
+and "regulars here" = others who also chose to check in and be seen.
+Account-based and consensual, not silent and ambient — which also
+sidesteps the hard cross-day re-identification problem (BLE IDs rotate
+by design). Refusing to hoard this data isn't a limitation, it's the
+moat: every creepy nearby app is creepy because it hoards.
+
 ## Platform
 
 ### iOS launch
