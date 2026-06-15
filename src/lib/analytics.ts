@@ -11,6 +11,7 @@
 // See PRIVACY.md and PRIVACY_POLICY.md for the broader contract.
 
 import PostHog from 'posthog-react-native';
+import type { PostHogEventProperties } from '@posthog/core';
 
 const KEY = process.env.EXPO_PUBLIC_POSTHOG_KEY;
 const HOST = 'https://us.i.posthog.com';
@@ -51,7 +52,7 @@ export async function setAnalyticsOptedIn(value: boolean): Promise<void> {
  * Fire a named event. No-op if the user is opted out or the SDK isn't
  * initialized. Properties should be small, primitive, and PII-free.
  */
-export function track(event: string, props?: Record<string, unknown>): void {
+export function track(event: string, props?: PostHogEventProperties): void {
   if (!client) return;
   client.capture(event, props);
 }
@@ -60,7 +61,7 @@ export function track(event: string, props?: Record<string, unknown>): void {
  * Link subsequent events to a stable user identifier. Call once per
  * sign-in after opt-in is confirmed.
  */
-export function identify(userId: string, traits?: Record<string, unknown>): void {
+export function identify(userId: string, traits?: PostHogEventProperties): void {
   if (!client) return;
   client.identify(userId, traits);
 }
