@@ -1,6 +1,6 @@
 # Anor Roadmap
 
-_Last updated: 2026-05-19_
+_Last updated: 2026-06-15_
 
 Parked ideas worth doing later but not now. Each item has a **trigger**
 — the condition that makes it worth picking up. Without the trigger,
@@ -39,6 +39,44 @@ any code is written.
 "ads." The curated/guide framing fits Anor's aesthetic; "ads" doesn't.
 Could combine with date-night packages (already on MISSION.md's
 "rules in" list).
+
+**Refinement — venue "what's-on" + specials (design locked 2026-06-15):**
+Sharpens the listing from a static directory entry into a live surface,
+and resolves how specials/promos can exist without becoming ad-spam.
+Verdict after working it through:
+
+- **Pull-first, no dedicated tab.** Specials / "what's on" live as a
+  *section* in the nearby view or a tap-in on the venue — never a 4th
+  top-level tab. A permanent tab over-weights commerce in a connection
+  app; same content, quieter signal. Nothing blasts the user.
+- **The one consented interrupt is the monetization carrier.** Passive
+  browsing is privacy-clean but low-value to a venue (low reach → low
+  willingness to pay). The thing a venue actually pays for is a rare,
+  opt-in, **present-only** nudge for time-sensitive specials ("happy
+  hour just started") — fired only if the user opted in *and* is
+  physically in the venue. Everything else stays pull.
+- **Consent must be granular + honest.** A separate promo opt-in
+  (default OFF), never bundled with connection/event content so you
+  can't be forced to accept ads to get the useful stuff. Frequency
+  caps + one-tap per-venue mute.
+- **Impersonal fan-out (load-bearing).** Venue composes; backend
+  delivers. The venue never sees who's present — at most an aggregate
+  count. Same impersonal line as the rest of the privacy contract.
+- **Specials are a feature of the venue layer, not their own product.**
+  The B2B offer = verified presence + impersonal foot-traffic analytics
+  + light what's-on, with specials riding on top. Do NOT build a POS /
+  in-app ordering / payments rail — that's a pivot into Toast/Square
+  territory, blows up the privacy posture, and pulls against the
+  connection mission. If commerce is ever wanted, link OUT to the
+  venue's existing ordering system, don't become the rail.
+- **Identity gravity (decide with eyes open):** money bends product.
+  Letting the venue layer carry deals pulls Anor toward local-deals-app
+  territory over time. Acceptable IF chosen deliberately — keep it
+  walled off so the connection core never depends on ads to function.
+
+**Trigger:** same as parent (~200 active users in one geography).
+Specials sharpen the B2B pitch but need users physically at venues to
+receive them — strictly post-density.
 
 ## Product ideas
 
