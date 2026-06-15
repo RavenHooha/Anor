@@ -7,6 +7,7 @@ export type Profile = {
   photos: string[];
   bio: string;
   interests: string[];
+  connectPrefs: string[];
   age: number | null;
   hideMessagePreview: boolean;
   analyticsOptedIn: boolean;
@@ -22,7 +23,7 @@ export async function getMyProfile(): Promise<Profile | null> {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, name, photo_url, photos, bio, interests, age, hide_message_preview, analytics_opted_in, created_at')
+    .select('id, name, photo_url, photos, bio, interests, connect_prefs, age, hide_message_preview, analytics_opted_in, created_at')
     .eq('id', userId)
     .maybeSingle();
 
@@ -34,6 +35,7 @@ export async function getMyProfile(): Promise<Profile | null> {
     photos: Array.isArray(data.photos) ? data.photos : [],
     bio: data.bio ?? '',
     interests: Array.isArray(data.interests) ? data.interests : [],
+    connectPrefs: Array.isArray(data.connect_prefs) ? data.connect_prefs : [],
     age: typeof data.age === 'number' ? data.age : null,
     hideMessagePreview: data.hide_message_preview === true,
     analyticsOptedIn: data.analytics_opted_in === true,
@@ -103,6 +105,7 @@ export async function upsertMyProfile(input: {
   photos?: string[];
   bio: string;
   interests?: string[];
+  connectPrefs?: string[];
   age?: number | null;
 }): Promise<Profile> {
   const { data: userData } = await supabase.auth.getUser();
@@ -115,6 +118,7 @@ export async function upsertMyProfile(input: {
     bio: input.bio,
   };
   if (input.interests !== undefined) row.interests = input.interests;
+  if (input.connectPrefs !== undefined) row.connect_prefs = input.connectPrefs;
   if (input.age !== undefined) row.age = input.age;
   if (input.photos !== undefined) {
     row.photos = input.photos;
@@ -129,7 +133,7 @@ export async function upsertMyProfile(input: {
   const { data, error } = await supabase
     .from('profiles')
     .upsert(row, { onConflict: 'id' })
-    .select('id, name, photo_url, photos, bio, interests, age, hide_message_preview, analytics_opted_in, created_at')
+    .select('id, name, photo_url, photos, bio, interests, connect_prefs, age, hide_message_preview, analytics_opted_in, created_at')
     .single();
 
   if (error) throw error;
@@ -140,6 +144,7 @@ export async function upsertMyProfile(input: {
     photos: Array.isArray(data.photos) ? data.photos : [],
     bio: data.bio ?? '',
     interests: Array.isArray(data.interests) ? data.interests : [],
+    connectPrefs: Array.isArray(data.connect_prefs) ? data.connect_prefs : [],
     age: typeof data.age === 'number' ? data.age : null,
     hideMessagePreview: data.hide_message_preview === true,
     analyticsOptedIn: data.analytics_opted_in === true,

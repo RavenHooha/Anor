@@ -15,6 +15,7 @@ import { STATUS_BY_ID } from '../types/status';
 import MessageComposerModal from '../components/MessageComposerModal';
 import ReportUserModal from '../components/ReportUserModal';
 import InterestChips from '../components/InterestChips';
+import ConnectPrefChips from '../components/ConnectPrefChips';
 import PhotoGalleryViewer from '../components/PhotoGalleryViewer';
 import FoundingBadge from '../components/FoundingBadge';
 import { isFoundingMember } from '../lib/founding';
@@ -102,6 +103,8 @@ export default function UserProfileScreen({ route, navigation }: Props) {
       {user.bio.length > 0 && <Text style={styles.bio}>{user.bio}</Text>}
 
       <InterestChips interests={user.interests} align="center" />
+
+      <ConnectPrefChips prefs={user.connectPrefs} align="center" />
 
       <View style={[styles.statusCard, { borderColor: cfg.color }]}>
         <View style={[styles.iconWrap, { backgroundColor: cfg.color + '22' }]}>

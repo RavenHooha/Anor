@@ -16,6 +16,8 @@ import {
   upsertMyProfile,
 } from '../storage/profile';
 import InterestPicker from '../components/InterestPicker';
+import ConnectPrefPicker from '../components/ConnectPrefPicker';
+import SectionHeader from '../components/SectionHeader';
 import PhotoGalleryEditor from '../components/PhotoGalleryEditor';
 import { useProfileGate } from '../auth/profileGate';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -30,6 +32,7 @@ export default function EditProfileScreen({ navigation }: Props) {
   const [bio, setBio] = useState('');
   const [ageText, setAgeText] = useState('');
   const [interests, setInterests] = useState<string[]>([]);
+  const [connectPrefs, setConnectPrefs] = useState<string[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -43,6 +46,7 @@ export default function EditProfileScreen({ navigation }: Props) {
         setBio(p.bio);
         setAgeText(p.age != null ? String(p.age) : '');
         setInterests(p.interests);
+        setConnectPrefs(p.connectPrefs);
         setPhotos(p.photos.length > 0 ? p.photos : p.photoUrl ? [p.photoUrl] : []);
       }
       setLoaded(true);
@@ -68,7 +72,7 @@ export default function EditProfileScreen({ navigation }: Props) {
     setSaving(true);
     setError(null);
     try {
-      await upsertMyProfile({ name: trimmed, bio: bio.trim(), photos, interests, age });
+      await upsertMyProfile({ name: trimmed, bio: bio.trim(), photos, interests, connectPrefs, age });
       await refreshProfile();
       navigation.goBack();
     } catch (e) {
@@ -132,8 +136,22 @@ export default function EditProfileScreen({ navigation }: Props) {
             {bio.length}/{BIO_LIMIT}
           </Text>
 
-          <Text style={styles.fieldLabel}>Interests</Text>
+          <View style={styles.sectionHeaderWrap}>
+            <SectionHeader icon="sparkles-outline" label="Interests" accent={colors.highlight} />
+          </View>
           <InterestPicker selected={interests} onChange={setInterests} />
+
+          <View style={styles.sectionHeaderWrap}>
+            <SectionHeader
+              icon="chatbubble-ellipses-outline"
+              label="How to connect with me"
+              accent={colors.secondary}
+            />
+          </View>
+          <Text style={styles.fieldHint}>
+            Optional — take the guesswork out of how people reach you.
+          </Text>
+          <ConnectPrefPicker selected={connectPrefs} onChange={setConnectPrefs} />
 
           {error && <Text style={styles.errorText}>{error}</Text>}
 
@@ -173,6 +191,12 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: spacing.md,
   },
+  fieldHint: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginBottom: spacing.xs,
+  },
+  sectionHeaderWrap: { marginTop: spacing.md },
   input: {
     backgroundColor: colors.surface,
     borderWidth: 1,

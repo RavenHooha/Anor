@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, radius, typography } from '../theme';
+import { colors } from '../theme';
+import ProfileTagSection from './ProfileTagSection';
 
 type Props = {
   interests: string[];
@@ -7,40 +7,13 @@ type Props = {
 };
 
 export default function InterestChips({ interests, align = 'left' }: Props) {
-  if (interests.length === 0) return null;
   return (
-    <View
-      style={[
-        styles.row,
-        align === 'center' && { justifyContent: 'center' },
-      ]}
-    >
-      {interests.map((tag) => (
-        <View key={tag} style={styles.chip}>
-          <Text style={styles.label}>{tag}</Text>
-        </View>
-      ))}
-    </View>
+    <ProfileTagSection
+      icon="sparkles-outline"
+      label="Interests"
+      tags={interests}
+      accent={colors.highlight}
+      align={align}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-  },
-  chip: {
-    backgroundColor: colors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-  },
-  label: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-});

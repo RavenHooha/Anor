@@ -14,6 +14,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
 import InterestChips from '../components/InterestChips';
+import ConnectPrefChips from '../components/ConnectPrefChips';
 import FoundingBadge from '../components/FoundingBadge';
 import { isFoundingMember } from '../lib/founding';
 import { getMyProfile, type Profile } from '../storage/profile';
@@ -104,6 +105,10 @@ export default function ProfileScreen() {
 
         {profile && profile.interests.length > 0 && (
           <InterestChips interests={profile.interests} align="center" />
+        )}
+
+        {profile && profile.connectPrefs.length > 0 && (
+          <ConnectPrefChips prefs={profile.connectPrefs} align="center" />
         )}
 
         {profile?.createdAt && (

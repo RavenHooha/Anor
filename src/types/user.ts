@@ -8,6 +8,7 @@ export type NearbyUser = {
   status: Status;
   bio: string;
   interests: string[];
+  connectPrefs: string[];
   age: number | null;
   venue: string | null;
   distanceM: number;
