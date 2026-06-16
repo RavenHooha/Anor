@@ -15,7 +15,6 @@ import {
 } from './src/notifications/setup';
 import {
   setAnalyticsOptedIn,
-  identify as identifyAnalytics,
   resetAnalytics,
   track,
 } from './src/lib/analytics';
@@ -89,11 +88,13 @@ function App() {
     try {
       const p = await getMyProfile();
       setHasProfile(!!p);
-      // Sync PostHog opt-in state with the user's preference. If opted
-      // in, also link future events to this user id.
+      // Sync PostHog opt-in state with the user's preference. Analytics stay
+      // anonymous/device-scoped on purpose: we do NOT identify() with the raw
+      // Supabase user_id, which would be an external re-identification join key
+      // (PRIVACY.md rule 7). Events are aggregate counts, so per-user identity
+      // isn't needed.
       if (p?.analyticsOptedIn) {
         await setAnalyticsOptedIn(true);
-        identifyAnalytics(session.user.id);
         track('app_open');
       } else {
         await setAnalyticsOptedIn(false);
