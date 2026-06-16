@@ -16,6 +16,7 @@ import { colors, spacing, radius, typography } from '../theme';
 import InterestChips from '../components/InterestChips';
 import ConnectPrefChips from '../components/ConnectPrefChips';
 import FoundingBadge from '../components/FoundingBadge';
+import LoadingScreen from '../components/LoadingScreen';
 import { isFoundingMember } from '../lib/founding';
 import { getMyProfile, type Profile } from '../storage/profile';
 import { track } from '../lib/analytics';
@@ -53,7 +54,7 @@ export default function ProfileScreen() {
   };
 
   if (!loaded) {
-    return <SafeAreaView style={styles.safe} edges={['top']} />;
+    return <LoadingScreen />;
   }
 
   return (

@@ -19,6 +19,7 @@ import InterestPicker from '../components/InterestPicker';
 import ConnectPrefPicker from '../components/ConnectPrefPicker';
 import SectionHeader from '../components/SectionHeader';
 import PhotoGalleryEditor from '../components/PhotoGalleryEditor';
+import LoadingScreen from '../components/LoadingScreen';
 import { useProfileGate } from '../auth/profileGate';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
@@ -82,7 +83,7 @@ export default function EditProfileScreen({ navigation }: Props) {
   };
 
   if (!loaded) {
-    return <SafeAreaView style={styles.safe} edges={['top']} />;
+    return <LoadingScreen />;
   }
 
   return (

@@ -11,6 +11,7 @@ import NearbyCard from '../components/NearbyCard';
 import MysteryCard from '../components/MysteryCard';
 import RadiusSelector from '../components/RadiusSelector';
 import VenueEditor from '../components/VenueEditor';
+import LoadingScreen from '../components/LoadingScreen';
 import { loadStatus, saveStatus } from '../storage/status';
 import { loadRadius, saveRadius } from '../storage/radius';
 import { fetchNearby, DEFAULT_RADIUS_M, RADIUS_PRESETS } from '../data/nearby';
@@ -106,7 +107,7 @@ export default function HomeScreen() {
   };
 
   if (!statusLoaded) {
-    return <SafeAreaView style={styles.safe} edges={['top']} />;
+    return <LoadingScreen />;
   }
 
   const isFocus = status === 'focus';
@@ -163,11 +164,23 @@ export default function HomeScreen() {
             Focus mode is on. The feed is paused.
           </Text>
         ) : totalNearby === 0 ? (
-          <Text style={styles.feedNote}>
-            {coords
-              ? `No one within ${areaName ?? 'range'} yet. Pull to refresh or widen the radius.`
-              : 'Waiting on your location…'}
-          </Text>
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconWrap}>
+              <Ionicons
+                name={coords ? 'compass-outline' : 'location-outline'}
+                size={28}
+                color={colors.primary}
+              />
+            </View>
+            <Text style={styles.emptyTitle}>
+              {coords ? 'No one nearby yet' : 'Finding your location…'}
+            </Text>
+            <Text style={styles.emptyBody}>
+              {coords
+                ? `You're early in ${areaName ?? 'this area'}. Pull down to refresh, or widen your radius above to reach further out.`
+                : "Hang tight — we need your location to show who's around."}
+            </Text>
+          </View>
         ) : (
           <View style={styles.countRow}>
             <Ionicons name="people-outline" size={14} color={colors.textMuted} />
@@ -301,6 +314,35 @@ const styles = StyleSheet.create({
   },
   feedDimmed: { opacity: 0.35 },
   feedNote: { ...typography.caption },
+  emptyState: {
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
+  },
+  emptyIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  emptyTitle: {
+    ...typography.title,
+    fontSize: 18,
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  emptyBody: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: spacing.md,
+    lineHeight: 18,
+  },
   grid: {
     gap: spacing.md,
   },

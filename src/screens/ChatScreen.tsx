@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { blockUser } from '../storage/blocks';
 import { track } from '../lib/analytics';
 import ReportUserModal from '../components/ReportUserModal';
+import LoadingScreen from '../components/LoadingScreen';
 import { colors, spacing, radius, typography } from '../theme';
 import {
   createOrGetThread,
@@ -139,7 +140,7 @@ export default function ChatScreen({ route, navigation }: Props) {
   }, [messages.length]);
 
   if (!thread || !meId) {
-    return <View style={styles.safe} />;
+    return <LoadingScreen />;
   }
 
   const isPending = thread.acceptedAt === null;

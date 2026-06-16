@@ -2,6 +2,8 @@ import { Platform } from 'react-native';
 import type { EventSubscription } from 'react-native';
 import BleManager from 'react-native-ble-manager';
 import BLEAdvertiser from 'react-native-ble-advertiser';
+import * as Sentry from '@sentry/react-native';
+import { track } from '../lib/analytics';
 import {
   ANOR_SERVICE_UUID,
   ANOR_COMPANY_ID,
@@ -80,9 +82,14 @@ export async function startBle(): Promise<void> {
       connectable: false,
     });
     advertising = true;
-  } catch {
+  } catch (e) {
     // Advertising can fail on devices that don't support peripheral mode.
-    // Scan still works.
+    // Scan still works — but this failure was previously invisible, so the
+    // app looked like it was working while being undiscoverable. Surface it:
+    // a Sentry breadcrumb for debugging and an anonymous opt-in event so we
+    // can see how often advertising fails in the field.
+    Sentry.captureException(e, { tags: { area: 'ble', op: 'advertise' } });
+    track('ble_advertise_failed');
   }
 
   // Scan: listen for other Anor devices via ble-manager's typed event helper.
