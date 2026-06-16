@@ -62,7 +62,7 @@
         {
           "isBackgroundEnabled": false,
           "neverForLocation": true,
-          "bluetoothAlwaysPermission": "Anor uses Bluetooth to find other Anor users near you."
+          "bluetoothAlwaysPermission": false
         }
       ],
       [

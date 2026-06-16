@@ -105,11 +105,12 @@ export async function getThread(threadId: string): Promise<ThreadDetail | null> 
   if (error || !data) return null;
 
   const otherId = data.user_a === me ? data.user_b : data.user_a;
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('name, photo_url')
-    .eq('id', otherId)
-    .maybeSingle();
+  // profiles SELECT is owner-only (migration 0032); read another user's safe
+  // public columns through the security-definer RPC instead of the table.
+  const { data: publicRows } = await supabase.rpc('get_public_profile', {
+    target_id: otherId,
+  });
+  const profile = Array.isArray(publicRows) ? publicRows[0] : null;
 
   return {
     id: data.id,
