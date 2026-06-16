@@ -23,4 +23,6 @@ Pre-launch — Android closed testing. Built in Sylva, NC.
 
 ## License
 
-Not yet chosen. The "replicable on purpose" commitment implies an open license; the specific choice is an open decision (see the note at the top of `docs/giving/2026.md`).
+Anor's source is licensed under the **GNU Affero General Public License v3.0** (AGPL-3.0) — see [LICENSE](LICENSE). Copy it, learn from it, build your own on top of it — but if you run a modified version as a network service, your changes stay open too. That's the mission in legal form: replicable, and it *stays* open; no one gets to wall it back up.
+
+The **Anor name and logo are not covered by this license** — they're reserved. Open recipe, protected name.
