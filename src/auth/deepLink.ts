@@ -1,7 +1,13 @@
 import * as Linking from 'expo-linking';
 import { supabase } from '../lib/supabase';
 
-const REDIRECT_URL = Linking.createURL('auth-callback');
+// Production uses a verified Android App Link (https://meetanor.com/auth-callback),
+// which opens the app directly with no browser "Open in Anor?" prompt — the
+// domain is claimed via /.well-known/assetlinks.json on the marketing site.
+// Dev/Expo Go can't verify App Links, so fall back to the generated exp:// URL.
+const REDIRECT_URL = __DEV__
+  ? Linking.createURL('auth-callback')
+  : 'https://meetanor.com/auth-callback';
 
 export async function sendMagicLink(email: string): Promise<void> {
   const { error } = await supabase.auth.signInWithOtp({

@@ -38,7 +38,7 @@ export const STATUSES: readonly StatusConfig[] = [
     id: 'spark',
     label: 'Spark',
     description: 'Looking for a real connection.',
-    icon: 'flame-outline',
+    icon: 'sparkles-outline',
     color: colors.primary,
   },
 ] as const;

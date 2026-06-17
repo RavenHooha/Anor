@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,7 +24,7 @@ const SHOW_DEV_SKIP = __DEV__ && !!DEV_EMAIL && !!DEV_PASSWORD;
 
 const FEATURES = [
   {
-    icon: 'flame-outline' as const,
+    icon: 'options-outline' as const,
     title: 'Intentional',
     body: 'Status broadcasts say how you’re showing up — Open, Connect, Focus, Spark.',
   },
@@ -85,7 +86,11 @@ export default function AuthScreen() {
         >
           <View style={styles.hero}>
             <View style={styles.logoWrap}>
-              <Ionicons name="flame" size={48} color={colors.primary} />
+              <Image
+                source={require('../../assets/logo.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
             </View>
             <Text style={styles.brand}>anor</Text>
             <Text style={styles.tagline}>Real connections. Made simple.</Text>
@@ -146,7 +151,12 @@ export default function AuthScreen() {
                   pressed && valid && phase !== 'sending' && styles.ctaPressed,
                 ]}
               >
-                <Text style={styles.ctaLabel}>
+                <Text
+                  style={[
+                    styles.ctaLabel,
+                    (!valid || phase === 'sending') && styles.ctaLabelDisabled,
+                  ]}
+                >
                   {phase === 'sending' ? 'Sending…' : 'Send sign-in link'}
                 </Text>
               </Pressable>
@@ -194,6 +204,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  logoImage: { width: 56, height: 56 },
   brand: {
     fontSize: 38,
     fontWeight: '700',
@@ -254,6 +265,7 @@ const styles = StyleSheet.create({
   ctaPressed: { backgroundColor: colors.primaryDim },
   ctaDisabled: { backgroundColor: colors.surfaceElevated },
   ctaLabel: { color: colors.background, fontSize: 16, fontWeight: '600' },
+  ctaLabelDisabled: { color: colors.textMuted },
   fineprint: {
     ...typography.caption,
     color: colors.textMuted,
