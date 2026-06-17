@@ -67,6 +67,9 @@ alter table profiles
 -- ── surface badge + cosmetics in the two profile read paths ────────────
 -- Both gate cosmetics on an active sub via a LEFT JOIN: tier is null for
 -- non-supporters, and the cosmetic columns return null unless tier is set.
+-- Both return types change (new columns) → drop before recreate.
+
+drop function if exists get_public_profile(uuid);
 
 create or replace function get_public_profile(target_id uuid)
 returns table (
