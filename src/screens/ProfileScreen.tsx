@@ -103,8 +103,9 @@ export default function ProfileScreen() {
 
         {supporter.tier && (
           <Text style={styles.supporterLabel}>
-            {TIER_BY_ID[supporter.tier].label} supporter
-            {supporter.isFounding ? ' · Founding' : ''}
+            {supporter.isFounding
+              ? `Founding Supporter · ${TIER_BY_ID[supporter.tier].label}`
+              : `${TIER_BY_ID[supporter.tier].label} supporter`}
           </Text>
         )}
 
