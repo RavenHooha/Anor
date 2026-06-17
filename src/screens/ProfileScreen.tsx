@@ -98,7 +98,7 @@ export default function ProfileScreen() {
 
         <View style={styles.nameRow}>
           <Text style={styles.name}>{profile?.name ?? 'Unnamed'}</Text>
-          <SupporterBadge tier={supporter.tier} size={20} />
+          <SupporterBadge tier={supporter.tier} size={28} />
         </View>
 
         {supporter.tier && (

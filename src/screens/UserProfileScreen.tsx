@@ -88,7 +88,7 @@ export default function UserProfileScreen({ route, navigation }: Props) {
 
       <View style={styles.nameRow}>
         <Text style={styles.name}>{user.name}</Text>
-        <SupporterBadge tier={user.supporter.tier} size={24} />
+        <SupporterBadge tier={user.supporter.tier} size={30} />
       </View>
 
       {isFoundingMember(user.createdAt) && (
