@@ -1,23 +1,35 @@
 import { useCallback, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Image, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
-import { ACCENT_COLORS, validAccent } from '../types/cosmetics';
-import { TIER_BY_ID, type SupporterInfo, NO_SUPPORTER } from '../types/subscription';
+import {
+  ACCENT_COLORS,
+  PROFILE_BACKGROUNDS,
+  validAccent,
+  validBackground,
+} from '../types/cosmetics';
+import {
+  TIER_BY_ID,
+  tierAtLeast,
+  type SupporterInfo,
+  NO_SUPPORTER,
+} from '../types/subscription';
 import {
   getMyProfile,
   getMySupporter,
   setProfileCosmetics,
 } from '../storage/profile';
 import SupporterBadge from '../components/SupporterBadge';
+import ProfileBackground from '../components/ProfileBackground';
 import LoadingScreen from '../components/LoadingScreen';
 
 export default function CustomizeScreen() {
   const [name, setName] = useState('You');
   const [supporter, setSupporter] = useState<SupporterInfo>(NO_SUPPORTER);
   const [accent, setAccent] = useState<string | null>(null);
+  const [bg, setBg] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -29,6 +41,7 @@ export default function CustomizeScreen() {
         if (p?.name) setName(p.name);
         setSupporter(s);
         setAccent(validAccent(s.accentColor));
+        setBg(validBackground(s.profileBackground));
         setLoaded(true);
       });
       return () => {
@@ -46,6 +59,20 @@ export default function CustomizeScreen() {
       await setProfileCosmetics({ accentColor: color });
     } catch {
       setAccent(prev); // revert on failure
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const pickBackground = async (id: string | null) => {
+    if (saving) return;
+    const prev = bg;
+    setBg(id); // optimistic
+    setSaving(true);
+    try {
+      await setProfileCosmetics({ profileBackground: id });
+    } catch {
+      setBg(prev); // revert on failure
     } finally {
       setSaving(false);
     }
@@ -70,9 +97,11 @@ export default function CustomizeScreen() {
   }
 
   const nameColor = accent ?? colors.textPrimary;
+  const canBackground = tierAtLeast(supporter.tier, 'patron');
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <ProfileBackground id={bg} />
       <ScrollView contentContainerStyle={styles.content}>
         {/* Live preview */}
         <View style={styles.preview}>
@@ -121,6 +150,57 @@ export default function CustomizeScreen() {
             </Pressable>
           ))}
         </View>
+
+        {/* Background — patron and up */}
+        <Text style={styles.section}>Profile backdrop</Text>
+        {canBackground ? (
+          <>
+            <Text style={styles.sectionHint}>
+              A faint sun glow behind your profile.
+            </Text>
+            <View style={styles.swatches}>
+              <Pressable onPress={() => pickBackground(null)} style={styles.swatch}>
+                <View
+                  style={[
+                    styles.swatchInner,
+                    styles.swatchDefault,
+                    bg === null && styles.swatchInnerSelected,
+                  ]}
+                >
+                  <Ionicons name="close" size={18} color={colors.textMuted} />
+                </View>
+                <Text style={styles.swatchLabel}>None</Text>
+              </Pressable>
+
+              {PROFILE_BACKGROUNDS.map((b) => (
+                <Pressable
+                  key={b.id}
+                  onPress={() => pickBackground(b.id)}
+                  style={styles.swatch}
+                >
+                  <View
+                    style={[
+                      styles.swatchInner,
+                      styles.swatchDefault,
+                      bg === b.id && styles.swatchInnerSelected,
+                    ]}
+                  >
+                    <Image
+                      source={require('../../assets/logo.png')}
+                      style={{ width: 40, height: 40, tintColor: b.hue, opacity: 0.85 }}
+                      resizeMode="contain"
+                    />
+                  </View>
+                  <Text style={styles.swatchLabel}>{b.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        ) : (
+          <Text style={styles.sectionHint}>
+            Profile backdrops unlock at the Patron tier.
+          </Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

@@ -19,7 +19,8 @@ import ConnectPrefChips from '../components/ConnectPrefChips';
 import PhotoGalleryViewer from '../components/PhotoGalleryViewer';
 import FoundingBadge from '../components/FoundingBadge';
 import SupporterBadge from '../components/SupporterBadge';
-import { validAccent } from '../types/cosmetics';
+import ProfileBackground from '../components/ProfileBackground';
+import { validAccent, validBackground } from '../types/cosmetics';
 import { isFoundingMember } from '../lib/founding';
 import { createOrGetThread, findExistingThread } from '../storage/threads';
 import { blockUser } from '../storage/blocks';
@@ -78,6 +79,7 @@ export default function UserProfileScreen({ route, navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.scroll} edges={['bottom']}>
+      <ProfileBackground id={validBackground(user.supporter.profileBackground)} />
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}

@@ -23,3 +23,31 @@ const ACCENT_SET = new Set(ACCENT_COLORS.map((a) => a.color));
 export function validAccent(color: string | null | undefined): string | null {
   return color && ACCENT_SET.has(color) ? color : null;
 }
+
+// Profile backgrounds (patron+). Each renders a large, faint Anor sun
+// watermark behind the profile in `hue`. Stored as the id in
+// profiles.profile_background. null/'none' = no backdrop.
+export type ProfileBackground = { id: string; label: string; hue: string };
+
+export const PROFILE_BACKGROUNDS: readonly ProfileBackground[] = [
+  { id: 'ember', label: 'Ember', hue: '#ff6b35' },
+  { id: 'gold', label: 'Gold', hue: '#ffcf3f' },
+  { id: 'rose', label: 'Rose', hue: '#ff5d8f' },
+  { id: 'violet', label: 'Violet', hue: '#b57edc' },
+  { id: 'sky', label: 'Sky', hue: '#5cc8ff' },
+  { id: 'mint', label: 'Mint', hue: '#5bd6a6' },
+] as const;
+
+export const BACKGROUND_BY_ID: Record<string, ProfileBackground> =
+  PROFILE_BACKGROUNDS.reduce(
+    (acc, b) => {
+      acc[b.id] = b;
+      return acc;
+    },
+    {} as Record<string, ProfileBackground>,
+  );
+
+// Returns the background id if it's one of ours, else null.
+export function validBackground(id: string | null | undefined): string | null {
+  return id && BACKGROUND_BY_ID[id] ? id : null;
+}

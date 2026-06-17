@@ -17,11 +17,12 @@ import InterestChips from '../components/InterestChips';
 import ConnectPrefChips from '../components/ConnectPrefChips';
 import FoundingBadge from '../components/FoundingBadge';
 import SupporterBadge from '../components/SupporterBadge';
+import ProfileBackground from '../components/ProfileBackground';
 import LoadingScreen from '../components/LoadingScreen';
 import { isFoundingMember } from '../lib/founding';
 import { getMyProfile, getMySupporter, type Profile } from '../storage/profile';
 import { NO_SUPPORTER, TIER_BY_ID, type SupporterInfo } from '../types/subscription';
-import { validAccent } from '../types/cosmetics';
+import { validAccent, validBackground } from '../types/cosmetics';
 import { track } from '../lib/analytics';
 import { SHARE_MESSAGE } from '../lib/links';
 import type { RootStackParamList } from '../navigation/types';
@@ -66,6 +67,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <ProfileBackground id={validBackground(supporter.profileBackground)} />
       <View style={styles.headerBar}>
         <Pressable
           onPress={() => navigation.navigate('Settings')}

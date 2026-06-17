@@ -89,12 +89,15 @@ export async function getMySupporter(): Promise<SupporterInfo> {
 // harmless — they light up if/when a sub is active.
 export async function setProfileCosmetics(input: {
   accentColor?: string | null;
+  profileBackground?: string | null;
 }): Promise<void> {
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData.user?.id;
   if (!userId) throw new Error('Not authenticated');
   const row: Record<string, unknown> = {};
   if (input.accentColor !== undefined) row.accent_color = input.accentColor;
+  if (input.profileBackground !== undefined)
+    row.profile_background = input.profileBackground;
   if (Object.keys(row).length === 0) return;
   const { error } = await supabase.from('profiles').update(row).eq('id', userId);
   if (error) throw error;
