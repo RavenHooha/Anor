@@ -9,7 +9,7 @@ export default function ProfileBackground({ id }: { id: string | null }) {
   if (!valid) return null;
   const bg = BACKGROUND_BY_ID[valid];
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.center]}>
       <Image
         source={require('../../assets/logo.png')}
         style={[styles.sun, { tintColor: bg.hue }]}
@@ -20,15 +20,13 @@ export default function ProfileBackground({ id }: { id: string | null }) {
 }
 
 const styles = StyleSheet.create({
-  // Sized and offset to sit fully on-screen as a symmetric halo behind the
-  // avatar (rather than clipped at the top edge), and faint enough to stay
-  // an ambient backdrop instead of competing with the name/content.
+  // Full-screen ambient wash: a large, very faint sun centered behind all
+  // content — reads as mood lighting rather than a placed graphic, so there's
+  // no awkward edge/clip to get wrong.
+  center: { alignItems: 'center', justifyContent: 'center' },
   sun: {
-    position: 'absolute',
-    top: 12,
-    alignSelf: 'center',
-    width: 300,
-    height: 300,
-    opacity: 0.07,
+    width: 680,
+    height: 680,
+    opacity: 0.05,
   },
 });
