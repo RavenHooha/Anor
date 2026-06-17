@@ -197,14 +197,12 @@ const styles = StyleSheet.create({
   },
   hero: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.lg },
   logoWrap: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: colors.surfaceElevated,
+    width: 96,
+    height: 96,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoImage: { width: 56, height: 56 },
+  logoImage: { width: 88, height: 88 },
   brand: {
     fontSize: 38,
     fontWeight: '700',
