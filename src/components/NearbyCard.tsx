@@ -47,7 +47,7 @@ export default function NearbyCard({ user, onPress, onMessage }: Props) {
           <Text style={styles.name} numberOfLines={1}>
             {user.name}
           </Text>
-          <SupporterBadge tier={user.supporter.tier} size={16} />
+          <SupporterBadge tier={user.supporter.tier} size={18} />
         </View>
         <View style={styles.statusRow}>
           <Ionicons name={cfg.icon} size={14} color={cfg.color} />
