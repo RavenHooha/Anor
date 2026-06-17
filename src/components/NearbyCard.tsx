@@ -4,6 +4,7 @@ import { colors, spacing, radius, typography } from '../theme';
 import { STATUS_BY_ID } from '../types/status';
 import { isFoundingMember } from '../lib/founding';
 import FoundingBadge from './FoundingBadge';
+import SupporterBadge from './SupporterBadge';
 import type { NearbyUser } from '../types/user';
 
 type Props = {
@@ -46,6 +47,7 @@ export default function NearbyCard({ user, onPress, onMessage }: Props) {
           <Text style={styles.name} numberOfLines={1}>
             {user.name}
           </Text>
+          <SupporterBadge tier={user.supporter.tier} size={16} />
         </View>
         <View style={styles.statusRow}>
           <Ionicons name={cfg.icon} size={14} color={cfg.color} />

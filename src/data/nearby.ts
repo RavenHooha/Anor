@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import type { Status } from '../types/status';
 import type { NearbyUser } from '../types/user';
+import type { SubscriptionTier } from '../types/subscription';
 import type { LocationCoords } from '../location/location';
 
 export type RadiusPreset = {
@@ -46,6 +47,13 @@ export async function fetchNearby(
       status: r.status as Status,
       distanceM: r.distance_m,
       createdAt: r.created_at ?? null,
+      supporter: {
+        tier: (r.tier as SubscriptionTier | null) ?? null,
+        isFounding: r.is_founding === true,
+        accentColor: r.accent_color ?? null,
+        profileTheme: r.profile_theme ?? null,
+        profileBackground: r.profile_background ?? null,
+      },
     }));
 }
 
@@ -62,4 +70,9 @@ type RpcRow = {
   venue: string | null;
   distance_m: number;
   created_at: string | null;
+  tier: string | null;
+  is_founding: boolean | null;
+  accent_color: string | null;
+  profile_theme: string | null;
+  profile_background: string | null;
 };

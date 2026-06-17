@@ -1,4 +1,5 @@
 import type { Status } from './status';
+import type { SupporterInfo } from './subscription';
 
 export type NearbyUser = {
   id: string;
@@ -13,4 +14,5 @@ export type NearbyUser = {
   venue: string | null;
   distanceM: number;
   createdAt: string | null;
+  supporter: SupporterInfo;
 };

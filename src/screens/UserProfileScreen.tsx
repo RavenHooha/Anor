@@ -18,6 +18,7 @@ import InterestChips from '../components/InterestChips';
 import ConnectPrefChips from '../components/ConnectPrefChips';
 import PhotoGalleryViewer from '../components/PhotoGalleryViewer';
 import FoundingBadge from '../components/FoundingBadge';
+import SupporterBadge from '../components/SupporterBadge';
 import { isFoundingMember } from '../lib/founding';
 import { createOrGetThread, findExistingThread } from '../storage/threads';
 import { blockUser } from '../storage/blocks';
@@ -85,7 +86,10 @@ export default function UserProfileScreen({ route, navigation }: Props) {
         aspectRatio={1}
       />
 
-      <Text style={styles.name}>{user.name}</Text>
+      <View style={styles.nameRow}>
+        <Text style={styles.name}>{user.name}</Text>
+        <SupporterBadge tier={user.supporter.tier} size={24} />
+      </View>
 
       {isFoundingMember(user.createdAt) && (
         <View style={{ alignItems: 'center' }}>
@@ -241,6 +245,12 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
     gap: spacing.lg,
     alignItems: 'stretch',
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
   },
   name: {
     ...typography.display,
