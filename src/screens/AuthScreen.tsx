@@ -195,12 +195,11 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
     gap: spacing.lg,
   },
-  hero: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.lg },
+  hero: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.xl * 2 },
   logoWrap: {
-    width: 96,
-    height: 96,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: -spacing.md,
   },
   logoImage: { width: 88, height: 88 },
   brand: {
@@ -214,7 +213,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
   },
-  features: { gap: spacing.md, marginTop: spacing.lg },
+  features: { gap: spacing.md },
   feature: {
     flexDirection: 'row',
     gap: spacing.md,
