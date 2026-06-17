@@ -6,6 +6,7 @@ import { isFoundingMember } from '../lib/founding';
 import FoundingBadge from './FoundingBadge';
 import SupporterBadge from './SupporterBadge';
 import { validAccent } from '../types/cosmetics';
+import { tierAtLeast } from '../types/subscription';
 import type { NearbyUser } from '../types/user';
 
 type Props = {
@@ -24,6 +25,9 @@ export default function NearbyCard({ user, onPress, onMessage }: Props) {
   const cfg = STATUS_BY_ID[user.status];
   const isFocus = user.status === 'focus';
   const accent = validAccent(user.supporter.accentColor);
+  const bioColor = tierAtLeast(user.supporter.tier, 'patron')
+    ? (accent ?? colors.highlight)
+    : null;
 
   const metaParts: string[] = [];
   if (user.age != null) metaParts.push(String(user.age));
@@ -68,7 +72,10 @@ export default function NearbyCard({ user, onPress, onMessage }: Props) {
           </View>
         )}
         {user.bio.length > 0 && (
-          <Text style={styles.bio} numberOfLines={2}>
+          <Text
+            style={[styles.bio, bioColor ? { color: bioColor } : null]}
+            numberOfLines={2}
+          >
             {user.bio}
           </Text>
         )}

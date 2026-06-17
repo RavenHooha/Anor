@@ -21,6 +21,7 @@ import FoundingBadge from '../components/FoundingBadge';
 import SupporterBadge from '../components/SupporterBadge';
 import ProfileBackground from '../components/ProfileBackground';
 import { validAccent, validBackground } from '../types/cosmetics';
+import { tierAtLeast } from '../types/subscription';
 import { isFoundingMember } from '../lib/founding';
 import { createOrGetThread, findExistingThread } from '../storage/threads';
 import { blockUser } from '../storage/blocks';
@@ -32,6 +33,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'UserProfile'>;
 export default function UserProfileScreen({ route, navigation }: Props) {
   const { user } = route.params;
   const cfg = STATUS_BY_ID[user.status];
+  const bioColor = tierAtLeast(user.supporter.tier, 'patron')
+    ? (validAccent(user.supporter.accentColor) ?? colors.highlight)
+    : undefined;
 
   const [composerOpen, setComposerOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -116,7 +120,11 @@ export default function UserProfileScreen({ route, navigation }: Props) {
         </View>
       )}
 
-      {user.bio.length > 0 && <Text style={styles.bio}>{user.bio}</Text>}
+      {user.bio.length > 0 && (
+        <Text style={[styles.bio, bioColor ? { color: bioColor } : null]}>
+          {user.bio}
+        </Text>
+      )}
 
       <InterestChips interests={user.interests} align="center" />
 

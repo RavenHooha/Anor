@@ -21,7 +21,12 @@ import ProfileBackground from '../components/ProfileBackground';
 import LoadingScreen from '../components/LoadingScreen';
 import { isFoundingMember } from '../lib/founding';
 import { getMyProfile, getMySupporter, type Profile } from '../storage/profile';
-import { NO_SUPPORTER, TIER_BY_ID, type SupporterInfo } from '../types/subscription';
+import {
+  NO_SUPPORTER,
+  TIER_BY_ID,
+  tierAtLeast,
+  type SupporterInfo,
+} from '../types/subscription';
 import { validAccent, validBackground } from '../types/cosmetics';
 import { track } from '../lib/analytics';
 import { SHARE_MESSAGE } from '../lib/links';
@@ -64,6 +69,11 @@ export default function ProfileScreen() {
   }
 
   const accent = validAccent(supporter.accentColor);
+  // Status-line styling (Patron+): the bio renders in the accent (or the
+  // highlight tone if no accent picked) instead of the muted default.
+  const bioColor = tierAtLeast(supporter.tier, 'patron')
+    ? (accent ?? colors.highlight)
+    : undefined;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -125,7 +135,9 @@ export default function ProfileScreen() {
         )}
 
         {profile?.bio && profile.bio.length > 0 && (
-          <Text style={styles.bio}>{profile.bio}</Text>
+          <Text style={[styles.bio, bioColor ? { color: bioColor } : null]}>
+            {profile.bio}
+          </Text>
         )}
 
         {profile && profile.interests.length > 0 && (
