@@ -1,4 +1,9 @@
 import { supabase } from '../lib/supabase';
+import {
+  NO_SUPPORTER,
+  type SupporterInfo,
+  type SubscriptionTier,
+} from '../types/subscription';
 
 export type Profile = {
   id: string;
@@ -40,6 +45,41 @@ export async function getMyProfile(): Promise<Profile | null> {
     hideMessagePreview: data.hide_message_preview === true,
     analyticsOptedIn: data.analytics_opted_in === true,
     createdAt: data.created_at ?? null,
+  };
+}
+
+// The current user's own supporter state — active tier + cosmetic choices.
+// Reads the subscriptions row (RLS allows self-read) and the cosmetic columns
+// on the own profile. Returns NO_SUPPORTER when there's no active sub.
+export async function getMySupporter(): Promise<SupporterInfo> {
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData.user?.id;
+  if (!userId) return NO_SUPPORTER;
+
+  const { data: sub } = await supabase
+    .from('subscriptions')
+    .select('tier, is_founding, status, current_period_end')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  const active =
+    !!sub &&
+    sub.status === 'active' &&
+    new Date(sub.current_period_end).getTime() > Date.now();
+  if (!active || !sub) return NO_SUPPORTER;
+
+  const { data: prof } = await supabase
+    .from('profiles')
+    .select('accent_color, profile_theme, profile_background')
+    .eq('id', userId)
+    .maybeSingle();
+
+  return {
+    tier: sub.tier as SubscriptionTier,
+    isFounding: sub.is_founding === true,
+    accentColor: prof?.accent_color ?? null,
+    profileTheme: prof?.profile_theme ?? null,
+    profileBackground: prof?.profile_background ?? null,
   };
 }
 

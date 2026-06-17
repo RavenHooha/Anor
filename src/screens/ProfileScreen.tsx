@@ -16,9 +16,11 @@ import { colors, spacing, radius, typography } from '../theme';
 import InterestChips from '../components/InterestChips';
 import ConnectPrefChips from '../components/ConnectPrefChips';
 import FoundingBadge from '../components/FoundingBadge';
+import SupporterBadge from '../components/SupporterBadge';
 import LoadingScreen from '../components/LoadingScreen';
 import { isFoundingMember } from '../lib/founding';
-import { getMyProfile, type Profile } from '../storage/profile';
+import { getMyProfile, getMySupporter, type Profile } from '../storage/profile';
+import { NO_SUPPORTER, TIER_BY_ID, type SupporterInfo } from '../types/subscription';
 import { track } from '../lib/analytics';
 import { SHARE_MESSAGE } from '../lib/links';
 import type { RootStackParamList } from '../navigation/types';
@@ -27,6 +29,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [supporter, setSupporter] = useState<SupporterInfo>(NO_SUPPORTER);
   const [loaded, setLoaded] = useState(false);
   const navigation = useNavigation<Nav>();
 
@@ -36,6 +39,7 @@ export default function ProfileScreen() {
         setProfile(p);
         setLoaded(true);
       });
+      getMySupporter().then(setSupporter);
     }, []),
   );
 
@@ -92,7 +96,17 @@ export default function ProfileScreen() {
           </View>
         </Pressable>
 
-        <Text style={styles.name}>{profile?.name ?? 'Unnamed'}</Text>
+        <View style={styles.nameRow}>
+          <Text style={styles.name}>{profile?.name ?? 'Unnamed'}</Text>
+          <SupporterBadge tier={supporter.tier} size={20} />
+        </View>
+
+        {supporter.tier && (
+          <Text style={styles.supporterLabel}>
+            {TIER_BY_ID[supporter.tier].label} supporter
+            {supporter.isFounding ? ' · Founding' : ''}
+          </Text>
+        )}
 
         {isFoundingMember(profile?.createdAt) && (
           <View style={styles.badgeRow}>
@@ -201,11 +215,24 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.background,
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
   name: {
     ...typography.title,
     fontSize: 26,
     color: colors.textPrimary,
     textAlign: 'center',
+  },
+  supporterLabel: {
+    ...typography.caption,
+    color: colors.highlight,
+    textAlign: 'center',
+    fontWeight: '600',
+    marginTop: -spacing.sm,
   },
   bio: {
     ...typography.body,
