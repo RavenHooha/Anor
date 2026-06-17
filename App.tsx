@@ -64,6 +64,24 @@ function App() {
     return startAuthLinkListener();
   }, []);
 
+  // On cold launch, pull the latest OTA update and reload into it so testers
+  // always run the newest JS without waiting a launch behind. No-ops in dev
+  // (Metro serves the bundle) and stays silent if offline or up to date.
+  useEffect(() => {
+    if (__DEV__ || !Updates.isEnabled) return;
+    (async () => {
+      try {
+        const update = await Updates.checkForUpdateAsync();
+        if (update.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          await Updates.reloadAsync();
+        }
+      } catch {
+        // Offline or update server unreachable — just run the cached bundle.
+      }
+    })();
+  }, []);
+
   // Register push token once we know who the user is.
   useEffect(() => {
     if (session) setupPushNotifications().catch(() => {});
