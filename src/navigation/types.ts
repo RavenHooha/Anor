@@ -17,4 +17,5 @@ export type RootStackParamList = {
   EditProfile: undefined;
   BlockedUsers: undefined;
   Settings: undefined;
+  Customize: undefined;
 };

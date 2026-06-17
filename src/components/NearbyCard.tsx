@@ -5,6 +5,7 @@ import { STATUS_BY_ID } from '../types/status';
 import { isFoundingMember } from '../lib/founding';
 import FoundingBadge from './FoundingBadge';
 import SupporterBadge from './SupporterBadge';
+import { validAccent } from '../types/cosmetics';
 import type { NearbyUser } from '../types/user';
 
 type Props = {
@@ -22,6 +23,7 @@ function formatDistance(m: number): string {
 export default function NearbyCard({ user, onPress, onMessage }: Props) {
   const cfg = STATUS_BY_ID[user.status];
   const isFocus = user.status === 'focus';
+  const accent = validAccent(user.supporter.accentColor);
 
   const metaParts: string[] = [];
   if (user.age != null) metaParts.push(String(user.age));
@@ -44,7 +46,10 @@ export default function NearbyCard({ user, onPress, onMessage }: Props) {
       </View>
       <View style={styles.body}>
         <View style={styles.headRow}>
-          <Text style={styles.name} numberOfLines={1}>
+          <Text
+            style={[styles.name, accent ? { color: accent } : null]}
+            numberOfLines={1}
+          >
             {user.name}
           </Text>
           <SupporterBadge tier={user.supporter.tier} size={22} />

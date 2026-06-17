@@ -19,6 +19,7 @@ import ConnectPrefChips from '../components/ConnectPrefChips';
 import PhotoGalleryViewer from '../components/PhotoGalleryViewer';
 import FoundingBadge from '../components/FoundingBadge';
 import SupporterBadge from '../components/SupporterBadge';
+import { validAccent } from '../types/cosmetics';
 import { isFoundingMember } from '../lib/founding';
 import { createOrGetThread, findExistingThread } from '../storage/threads';
 import { blockUser } from '../storage/blocks';
@@ -87,7 +88,16 @@ export default function UserProfileScreen({ route, navigation }: Props) {
       />
 
       <View style={styles.nameRow}>
-        <Text style={styles.name}>{user.name}</Text>
+        <Text
+          style={[
+            styles.name,
+            validAccent(user.supporter.accentColor)
+              ? { color: validAccent(user.supporter.accentColor)! }
+              : null,
+          ]}
+        >
+          {user.name}
+        </Text>
         <SupporterBadge tier={user.supporter.tier} size={30} />
       </View>
 

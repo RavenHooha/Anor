@@ -21,6 +21,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import { isFoundingMember } from '../lib/founding';
 import { getMyProfile, getMySupporter, type Profile } from '../storage/profile';
 import { NO_SUPPORTER, TIER_BY_ID, type SupporterInfo } from '../types/subscription';
+import { validAccent } from '../types/cosmetics';
 import { track } from '../lib/analytics';
 import { SHARE_MESSAGE } from '../lib/links';
 import type { RootStackParamList } from '../navigation/types';
@@ -61,6 +62,8 @@ export default function ProfileScreen() {
     return <LoadingScreen />;
   }
 
+  const accent = validAccent(supporter.accentColor);
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.headerBar}>
@@ -97,7 +100,11 @@ export default function ProfileScreen() {
         </Pressable>
 
         <View style={styles.nameRow}>
-          <Text style={styles.name}>{profile?.name ?? 'Unnamed'}</Text>
+          <Text
+            style={[styles.name, accent ? { color: accent } : null]}
+          >
+            {profile?.name ?? 'Unnamed'}
+          </Text>
           <SupporterBadge tier={supporter.tier} size={28} />
         </View>
 
@@ -161,6 +168,19 @@ export default function ProfileScreen() {
             <Text style={styles.shareLabel}>Invite a friend</Text>
           </Pressable>
         </View>
+
+        {supporter.tier && (
+          <Pressable
+            onPress={() => navigation.navigate('Customize')}
+            style={({ pressed }) => [
+              styles.personalizeBtn,
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <Ionicons name="color-palette-outline" size={16} color={colors.highlight} />
+            <Text style={styles.personalizeLabel}>Personalize</Text>
+          </Pressable>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -272,4 +292,18 @@ const styles = StyleSheet.create({
   shareBtn: { backgroundColor: colors.primary },
   shareBtnPressed: { backgroundColor: colors.primaryDim },
   shareLabel: { color: colors.background, fontSize: 14, fontWeight: '600' },
+  personalizeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    alignSelf: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.pill,
+  },
+  personalizeLabel: { color: colors.highlight, fontSize: 14, fontWeight: '600' },
 });

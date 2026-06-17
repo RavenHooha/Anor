@@ -83,6 +83,23 @@ export async function getMySupporter(): Promise<SupporterInfo> {
   };
 }
 
+// Save the user's cosmetic choices (supporter perk). Only the columns passed
+// are updated. The columns only *render* when the user has an active sub
+// (gated server-side in the read RPCs), so setting them while unsubscribed is
+// harmless — they light up if/when a sub is active.
+export async function setProfileCosmetics(input: {
+  accentColor?: string | null;
+}): Promise<void> {
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData.user?.id;
+  if (!userId) throw new Error('Not authenticated');
+  const row: Record<string, unknown> = {};
+  if (input.accentColor !== undefined) row.accent_color = input.accentColor;
+  if (Object.keys(row).length === 0) return;
+  const { error } = await supabase.from('profiles').update(row).eq('id', userId);
+  if (error) throw error;
+}
+
 export async function setHideMessagePreview(value: boolean): Promise<void> {
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData.user?.id;
