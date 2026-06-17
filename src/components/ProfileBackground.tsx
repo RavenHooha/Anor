@@ -20,12 +20,15 @@ export default function ProfileBackground({ id }: { id: string | null }) {
 }
 
 const styles = StyleSheet.create({
+  // Sized and offset to sit fully on-screen as a symmetric halo behind the
+  // avatar (rather than clipped at the top edge), and faint enough to stay
+  // an ambient backdrop instead of competing with the name/content.
   sun: {
     position: 'absolute',
-    top: -80,
+    top: 12,
     alignSelf: 'center',
-    width: 420,
-    height: 420,
-    opacity: 0.1,
+    width: 300,
+    height: 300,
+    opacity: 0.07,
   },
 });
