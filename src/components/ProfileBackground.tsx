@@ -27,6 +27,6 @@ const styles = StyleSheet.create({
   sun: {
     width: 680,
     height: 680,
-    opacity: 0.05,
+    opacity: 0.12,
   },
 });
