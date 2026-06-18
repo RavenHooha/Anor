@@ -14,6 +14,11 @@ import {
   setupPushNotifications,
 } from './src/notifications/setup';
 import {
+  configurePurchases,
+  identifyPurchases,
+  resetPurchases,
+} from './src/lib/purchases';
+import {
   setAnalyticsOptedIn,
   resetAnalytics,
   track,
@@ -63,6 +68,17 @@ function App() {
   useEffect(() => {
     return startAuthLinkListener();
   }, []);
+
+  // Configure RevenueCat once at startup (no-op until the API key is set).
+  useEffect(() => {
+    configurePurchases();
+  }, []);
+
+  // Tie purchases to the signed-in user (and detach on sign-out).
+  useEffect(() => {
+    if (session) identifyPurchases(session.user.id);
+    else resetPurchases();
+  }, [session]);
 
   // On cold launch, pull the latest OTA update and reload into it so testers
   // always run the newest JS without waiting a launch behind. No-ops in dev

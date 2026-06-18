@@ -13,6 +13,7 @@ import EditProfileScreen from '../screens/EditProfileScreen';
 import BlockedUsersScreen from '../screens/BlockedUsersScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import CustomizeScreen from '../screens/CustomizeScreen';
+import PaywallScreen from '../screens/PaywallScreen';
 import MainTabs from './MainTabs';
 import { colors } from '../theme';
 import type { RootStackParamList } from './types';
@@ -132,6 +133,18 @@ export default function RootNavigator({ isAuthed, hasProfile }: Props) {
                 headerStyle: { backgroundColor: colors.background },
                 headerTintColor: colors.textPrimary,
                 headerTitleStyle: { color: colors.textPrimary },
+                headerShadowVisible: false,
+                headerBackTitle: '',
+              }}
+            />
+            <Stack.Screen
+              name="Paywall"
+              component={PaywallScreen}
+              options={{
+                headerShown: true,
+                headerTitle: '',
+                headerStyle: { backgroundColor: colors.background },
+                headerTintColor: colors.textPrimary,
                 headerShadowVisible: false,
                 headerBackTitle: '',
               }}

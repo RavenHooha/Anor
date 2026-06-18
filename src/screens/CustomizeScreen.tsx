@@ -1,7 +1,9 @@
 import { useCallback, useState } from 'react';
 import { View, Text, Image, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
 import {
@@ -26,6 +28,8 @@ import ProfileBackground from '../components/ProfileBackground';
 import LoadingScreen from '../components/LoadingScreen';
 
 export default function CustomizeScreen() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [name, setName] = useState('You');
   const [supporter, setSupporter] = useState<SupporterInfo>(NO_SUPPORTER);
   const [accent, setAccent] = useState<string | null>(null);
@@ -91,6 +95,12 @@ export default function CustomizeScreen() {
             Personalizing your profile is part of supporting Anor. Become a
             supporter to pick your accent color and more.
           </Text>
+          <Pressable
+            onPress={() => navigation.navigate('Paywall')}
+            style={({ pressed }) => [styles.gateBtn, pressed && { opacity: 0.85 }]}
+          >
+            <Text style={styles.gateBtnLabel}>Support Anor</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     );
@@ -224,6 +234,14 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
   },
+  gateBtn: {
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: radius.pill,
+    marginTop: spacing.sm,
+  },
+  gateBtnLabel: { color: colors.background, fontSize: 15, fontWeight: '700' },
   preview: {
     backgroundColor: colors.surface,
     borderWidth: 1,

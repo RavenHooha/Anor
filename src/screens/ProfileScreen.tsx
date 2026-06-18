@@ -183,7 +183,7 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
-        {supporter.tier && (
+        {supporter.tier ? (
           <Pressable
             onPress={() => navigation.navigate('Customize')}
             style={({ pressed }) => [
@@ -193,6 +193,17 @@ export default function ProfileScreen() {
           >
             <Ionicons name="color-palette-outline" size={16} color={colors.highlight} />
             <Text style={styles.personalizeLabel}>Personalize</Text>
+          </Pressable>
+        ) : (
+          <Pressable
+            onPress={() => navigation.navigate('Paywall')}
+            style={({ pressed }) => [
+              styles.personalizeBtn,
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <Ionicons name="sunny-outline" size={16} color={colors.highlight} />
+            <Text style={styles.personalizeLabel}>Support Anor</Text>
           </Pressable>
         )}
       </ScrollView>

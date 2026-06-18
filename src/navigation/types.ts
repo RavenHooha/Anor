@@ -18,4 +18,5 @@ export type RootStackParamList = {
   BlockedUsers: undefined;
   Settings: undefined;
   Customize: undefined;
+  Paywall: undefined;
 };
