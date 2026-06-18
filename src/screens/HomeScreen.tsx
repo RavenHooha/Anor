@@ -9,12 +9,14 @@ import StatusSelector from '../components/StatusSelector';
 import StatusBadge from '../components/StatusBadge';
 import NearbyCard from '../components/NearbyCard';
 import MysteryCard from '../components/MysteryCard';
+import VenueCard from '../components/VenueCard';
 import RadiusSelector from '../components/RadiusSelector';
 import VenueEditor from '../components/VenueEditor';
 import LoadingScreen from '../components/LoadingScreen';
 import { loadStatus, saveStatus } from '../storage/status';
 import { loadRadius, saveRadius } from '../storage/radius';
 import { fetchNearby, DEFAULT_RADIUS_M, RADIUS_PRESETS } from '../data/nearby';
+import { fetchNearbyVenues, type NearbyVenue } from '../data/venues';
 import { getMyVenue } from '../data/venue';
 import { createOrGetThread } from '../storage/threads';
 import { useBleNearby } from '../ble/useBleNearby';
@@ -31,6 +33,7 @@ export default function HomeScreen() {
   const [statusLoaded, setStatusLoaded] = useState(false);
   const [radiusM, setRadiusM] = useState<number>(DEFAULT_RADIUS_M);
   const [nearby, setNearby] = useState<NearbyUser[]>([]);
+  const [venues, setVenues] = useState<NearbyVenue[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [areaNames, setAreaNames] = useState<AreaNames | null>(null);
   const [venue, setVenue] = useState<string | null>(null);
@@ -50,11 +53,13 @@ export default function HomeScreen() {
   const loadNearby = useCallback(async () => {
     if (!coords) return;
     try {
-      const [users, myVenue] = await Promise.all([
+      const [users, nearbyVenues, myVenue] = await Promise.all([
         fetchNearby(coords, radiusM),
+        fetchNearbyVenues(coords, radiusM),
         getMyVenue(),
       ]);
       setNearby(users);
+      setVenues(nearbyVenues);
       setVenue(myVenue);
     } catch {
       // ignore — banner state covers errors
@@ -209,6 +214,20 @@ export default function HomeScreen() {
             ))}
           </View>
         </View>
+
+        {!isFocus && venues.length > 0 && (
+          <View style={styles.venuesSection}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="storefront-outline" size={14} color={colors.textMuted} />
+              <Text style={styles.sectionTitle}>Places nearby</Text>
+            </View>
+            <View style={styles.grid}>
+              {venues.map((v) => (
+                <VenueCard key={v.id} venue={v} />
+              ))}
+            </View>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -345,6 +364,19 @@ const styles = StyleSheet.create({
   },
   grid: {
     gap: spacing.md,
+  },
+  venuesSection: { gap: spacing.sm, marginTop: spacing.sm },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  sectionTitle: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    fontWeight: '600',
   },
   banner: {
     backgroundColor: colors.surface,
