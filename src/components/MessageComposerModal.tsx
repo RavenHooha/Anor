@@ -86,6 +86,7 @@ function ComposerSheet({ visible, recipientName, onCancel, onSend }: Props) {
           <View style={styles.actions}>
             <Pressable
               onPress={onCancel}
+              focusable={false}
               style={({ pressed }) => [
                 styles.btn,
                 styles.btnGhost,
@@ -97,6 +98,7 @@ function ComposerSheet({ visible, recipientName, onCancel, onSend }: Props) {
             <Pressable
               disabled={!canSend}
               onPress={() => onSend(trimmed)}
+              focusable={false}
               style={({ pressed }) => [
                 styles.btn,
                 styles.btnPrimary,

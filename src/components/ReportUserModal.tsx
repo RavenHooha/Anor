@@ -172,6 +172,7 @@ function ReportSheet({
             <Pressable
               onPress={onCancel}
               disabled={submitting}
+              focusable={false}
               style={({ pressed }) => [
                 styles.btn,
                 styles.btnGhost,
@@ -183,6 +184,7 @@ function ReportSheet({
             <Pressable
               disabled={!canSubmit}
               onPress={onSubmit}
+              focusable={false}
               style={({ pressed }) => [
                 styles.btn,
                 styles.btnPrimary,
