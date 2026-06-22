@@ -101,18 +101,28 @@ async function ensureAuthedUserId(): Promise<{ id: string | null; reason: string
   return { id: session.user.id, reason: 'session still valid' };
 }
 
-async function writePresence(
-  userId: string,
+type CheckinResult = {
+  venueName: string | null;
+  confirmed: boolean;
+};
+
+// Write location AND advance the server-side venue dwell state in one call.
+// Returns the current seeded venue + whether the 4-min dwell is confirmed, or
+// an error string.
+async function checkinPresence(
   coords: { lat: number; lng: number; accuracy: number },
-): Promise<string | null> {
-  const wkt = `POINT(${coords.lng} ${coords.lat})`;
-  const { error } = await supabase
-    .from('presence')
-    .upsert(
-      { user_id: userId, location: wkt, accuracy_m: coords.accuracy },
-      { onConflict: 'user_id' },
-    );
-  return error ? error.message : null;
+): Promise<CheckinResult | { error: string }> {
+  const { data, error } = await supabase.rpc('presence_checkin', {
+    p_lat: coords.lat,
+    p_lng: coords.lng,
+    p_accuracy: coords.accuracy,
+  });
+  if (error) return { error: error.message };
+  const row = Array.isArray(data) ? data[0] : data;
+  return {
+    venueName: row?.venue_name ?? null,
+    confirmed: !!row?.dwell_confirmed,
+  };
 }
 
 // Must be defined in module/global scope so the OS can invoke it on cold start.
@@ -141,16 +151,22 @@ TaskManager.defineTask(BG_PRESENCE_TASK, async ({ data, error }) => {
     return;
   }
 
-  const writeErr = await writePresence(auth.id, coords);
-  if (writeErr) {
-    await writeBreadcrumb(false, `presence write: ${writeErr}`);
+  const result = await checkinPresence(coords);
+  if ('error' in result) {
+    await writeBreadcrumb(false, `checkin: ${result.error}`);
     return;
   }
 
-  await writeBreadcrumb(
-    true,
-    `wrote presence (${auth.reason}) @ ${coords.lat.toFixed(4)},${coords.lng.toFixed(4)}`,
-  );
+  // Make the dwell state legible in the breadcrumb so it's testable on-device.
+  let msg: string;
+  if (result.confirmed) {
+    msg = `checked in at ${result.venueName} (dwell ✓)`;
+  } else if (result.venueName) {
+    msg = `at ${result.venueName} — settling…`;
+  } else {
+    msg = `presence ok (${auth.reason}) — no venue`;
+  }
+  await writeBreadcrumb(true, msg);
 });
 
 export async function isBackgroundPresenceRunning(): Promise<boolean> {
@@ -189,6 +205,8 @@ export async function startBackgroundPresence(): Promise<string | null> {
   await Location.startLocationUpdatesAsync(BG_PRESENCE_TASK, {
     accuracy: Location.Accuracy.Balanced,
     distanceInterval: 50, // meters — coarse on purpose (battery + privacy)
+    timeInterval: 120_000, // also ping ~every 2 min while stationary, so the
+    // venue dwell clock keeps advancing when the user is sitting still
     deferredUpdatesInterval: 60_000,
     pausesUpdatesAutomatically: false,
     showsBackgroundLocationIndicator: false,
