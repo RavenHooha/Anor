@@ -13,6 +13,8 @@ type Props = {
   user: NearbyUser;
   onPress: (user: NearbyUser) => void;
   onMessage?: (user: NearbyUser) => void;
+  // Co-presence cards share a venue, so distance is meaningless (0) — hide it.
+  hideDistance?: boolean;
 };
 
 function formatDistance(m: number): string {
@@ -21,7 +23,7 @@ function formatDistance(m: number): string {
   return km < 10 ? `${km.toFixed(1)} km` : `${Math.round(km)} km`;
 }
 
-export default function NearbyCard({ user, onPress, onMessage }: Props) {
+export default function NearbyCard({ user, onPress, onMessage, hideDistance }: Props) {
   const cfg = STATUS_BY_ID[user.status];
   const isFocus = user.status === 'focus';
   const accent = validAccent(user.supporter.accentColor);
@@ -31,7 +33,7 @@ export default function NearbyCard({ user, onPress, onMessage }: Props) {
 
   const metaParts: string[] = [];
   if (user.age != null) metaParts.push(String(user.age));
-  metaParts.push(formatDistance(user.distanceM));
+  if (!hideDistance) metaParts.push(formatDistance(user.distanceM));
   const meta = metaParts.join(' · ');
 
   return (

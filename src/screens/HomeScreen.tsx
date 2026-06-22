@@ -15,7 +15,7 @@ import VenueEditor from '../components/VenueEditor';
 import LoadingScreen from '../components/LoadingScreen';
 import { loadStatus, saveStatus } from '../storage/status';
 import { loadRadius, saveRadius } from '../storage/radius';
-import { fetchNearby, DEFAULT_RADIUS_M, RADIUS_PRESETS } from '../data/nearby';
+import { fetchNearby, fetchCopresence, DEFAULT_RADIUS_M, RADIUS_PRESETS } from '../data/nearby';
 import { fetchNearbyVenues, type NearbyVenue } from '../data/venues';
 import { getMyVenue } from '../data/venue';
 import { createOrGetThread } from '../storage/threads';
@@ -33,6 +33,8 @@ export default function HomeScreen() {
   const [statusLoaded, setStatusLoaded] = useState(false);
   const [radiusM, setRadiusM] = useState<number>(DEFAULT_RADIUS_M);
   const [nearby, setNearby] = useState<NearbyUser[]>([]);
+  const [hereUsers, setHereUsers] = useState<NearbyUser[]>([]);
+  const [hereVenue, setHereVenue] = useState<string | null>(null);
   const [venues, setVenues] = useState<NearbyVenue[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [areaNames, setAreaNames] = useState<AreaNames | null>(null);
@@ -53,14 +55,17 @@ export default function HomeScreen() {
   const loadNearby = useCallback(async () => {
     if (!coords) return;
     try {
-      const [users, nearbyVenues, myVenue] = await Promise.all([
+      const [users, nearbyVenues, myVenue, here] = await Promise.all([
         fetchNearby(coords, radiusM),
         fetchNearbyVenues(coords, radiusM),
         getMyVenue(),
+        fetchCopresence(),
       ]);
       setNearby(users);
       setVenues(nearbyVenues);
       setVenue(myVenue);
+      setHereUsers(here.users);
+      setHereVenue(here.venue);
     } catch {
       // ignore — banner state covers errors
     }
@@ -116,7 +121,13 @@ export default function HomeScreen() {
   }
 
   const isFocus = status === 'focus';
-  const totalNearby = nearby.length + bleDevices.length;
+  // Co-presence users are also physically near, so they'd appear in the general
+  // feed too — dedupe them out, since the "Here at {venue}" section owns them.
+  const hereIds = new Set(hereUsers.map((u) => u.id));
+  const generalNearby = nearby.filter((u) => !hereIds.has(u.id));
+  const showHere = !isFocus && hereUsers.length > 0;
+  const totalNearby =
+    generalNearby.length + bleDevices.length + (showHere ? hereUsers.length : 0);
 
   const preset = RADIUS_PRESETS.find((p) => p.meters === radiusM);
   const presetId = preset?.id ?? 'here';
@@ -199,12 +210,34 @@ export default function HomeScreen() {
         <LocationBanner status={locStatus} onRetry={retryLoc} />
         <BleBanner status={bleStatus} onRetry={retryBle} />
 
+        {showHere && (
+          <View style={styles.hereSection}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="location" size={14} color={colors.primary} />
+              <Text style={[styles.sectionTitle, styles.hereTitle]}>
+                Here{hereVenue ? ` at ${hereVenue}` : ''}
+              </Text>
+            </View>
+            <View style={styles.grid}>
+              {hereUsers.map((u) => (
+                <NearbyCard
+                  key={`here:${u.id}`}
+                  user={u}
+                  onPress={openProfile}
+                  onMessage={quickMessage}
+                  hideDistance
+                />
+              ))}
+            </View>
+          </View>
+        )}
+
         <View style={[styles.feed, isFocus && styles.feedDimmed]}>
           <View style={styles.grid}>
             {bleDevices.map((d) => (
               <MysteryCard key={`ble:${d.id}`} signal={d.signal} />
             ))}
-            {nearby.map((u) => (
+            {generalNearby.map((u) => (
               <NearbyCard
                 key={u.id}
                 user={u}
@@ -365,6 +398,8 @@ const styles = StyleSheet.create({
   grid: {
     gap: spacing.md,
   },
+  hereSection: { gap: spacing.sm, marginTop: spacing.md },
+  hereTitle: { color: colors.primary },
   venuesSection: { gap: spacing.sm, marginTop: spacing.sm },
   sectionHeader: {
     flexDirection: 'row',

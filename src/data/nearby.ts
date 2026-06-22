@@ -32,29 +32,51 @@ export async function fetchNearby(
   if (error) throw error;
   if (!data) return [];
 
-  return (data as RpcRow[])
-    .filter((r) => r.status !== null)
-    .map((r) => ({
-      id: r.id,
-      name: r.name,
-      photoUrl: r.photo_url ?? '',
-      photos: Array.isArray(r.photos) ? r.photos : [],
-      bio: r.bio ?? '',
-      interests: Array.isArray(r.interests) ? r.interests : [],
-      connectPrefs: Array.isArray(r.connect_prefs) ? r.connect_prefs : [],
-      age: typeof r.age === 'number' ? r.age : null,
-      venue: r.venue ?? null,
-      status: r.status as Status,
-      distanceM: r.distance_m,
-      createdAt: r.created_at ?? null,
-      supporter: {
-        tier: (r.tier as SubscriptionTier | null) ?? null,
-        isFounding: r.is_founding === true,
-        accentColor: r.accent_color ?? null,
-        profileTheme: r.profile_theme ?? null,
-        profileBackground: r.profile_background ?? null,
-      },
-    }));
+  return (data as RpcRow[]).filter((r) => r.status !== null).map(mapRow);
+}
+
+/**
+ * People confirmed at the same seeded venue as me right now, open to connect.
+ * Returns the venue name (from the first row) and the mapped users. Empty when
+ * I'm not checked in anywhere. distance is meaningless here (same venue), so the
+ * UI hides it. See migration 0038/0039.
+ */
+export async function fetchCopresence(): Promise<{
+  venue: string | null;
+  users: NearbyUser[];
+}> {
+  const { data, error } = await supabase.rpc('venue_copresence');
+  if (error) throw error;
+  const rows = (data as RpcRow[] | null) ?? [];
+  if (rows.length === 0) return { venue: null, users: [] };
+  return {
+    venue: rows[0]?.venue ?? null,
+    users: rows.filter((r) => r.status !== null).map(mapRow),
+  };
+}
+
+function mapRow(r: RpcRow): NearbyUser {
+  return {
+    id: r.id,
+    name: r.name,
+    photoUrl: r.photo_url ?? '',
+    photos: Array.isArray(r.photos) ? r.photos : [],
+    bio: r.bio ?? '',
+    interests: Array.isArray(r.interests) ? r.interests : [],
+    connectPrefs: Array.isArray(r.connect_prefs) ? r.connect_prefs : [],
+    age: typeof r.age === 'number' ? r.age : null,
+    venue: r.venue ?? null,
+    status: r.status as Status,
+    distanceM: r.distance_m,
+    createdAt: r.created_at ?? null,
+    supporter: {
+      tier: (r.tier as SubscriptionTier | null) ?? null,
+      isFounding: r.is_founding === true,
+      accentColor: r.accent_color ?? null,
+      profileTheme: r.profile_theme ?? null,
+      profileBackground: r.profile_background ?? null,
+    },
+  };
 }
 
 type RpcRow = {
