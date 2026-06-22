@@ -170,7 +170,7 @@ function ReportSheet({
 
           <View style={styles.actions}>
             <Pressable
-              onPress={onCancel}
+              onPressIn={() => !submitting && onCancel()}
               disabled={submitting}
               focusable={false}
               style={({ pressed }) => [
@@ -183,7 +183,7 @@ function ReportSheet({
             </Pressable>
             <Pressable
               disabled={!canSubmit}
-              onPress={onSubmit}
+              onPressIn={onSubmit}
               focusable={false}
               style={({ pressed }) => [
                 styles.btn,
