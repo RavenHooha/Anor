@@ -93,11 +93,18 @@ function App() {
         const update = await Updates.checkForUpdateAsync();
         if (update.isAvailable) {
           setUpdating(true);
-          await Updates.fetchUpdateAsync();
+          // Hold the overlay for a minimum beat so the update is actually
+          // perceptible, even when the download is near-instant. If the
+          // download takes longer, Promise.all simply waits for it.
+          await Promise.all([
+            Updates.fetchUpdateAsync(),
+            new Promise((resolve) => setTimeout(resolve, 2500)),
+          ]);
           await Updates.reloadAsync();
         }
       } catch {
-        // Offline or update server unreachable — just run the cached bundle.
+        // Offline / fetch failed — drop the overlay and run the cached bundle.
+        setUpdating(false);
       }
     })();
   }, []);
