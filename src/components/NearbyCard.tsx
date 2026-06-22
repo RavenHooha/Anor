@@ -133,10 +133,11 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: 2,
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   headRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   name: { ...typography.title, fontSize: 17, flexShrink: 1 },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 5, flexWrap: 'wrap' },
   statusLabel: { ...typography.caption, fontWeight: '600' },
   venueRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   venueText: {
