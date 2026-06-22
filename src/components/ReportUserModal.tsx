@@ -4,18 +4,18 @@ import {
   Text,
   TextInput,
   Pressable,
-  Modal,
   StyleSheet,
   ScrollView,
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  KeyboardProvider,
-  useReanimatedKeyboardAnimation,
-} from 'react-native-keyboard-controller';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
+import Animated, {
+  useAnimatedStyle,
+  FadeIn,
+  SlideInDown,
+} from 'react-native-reanimated';
 import { colors, spacing, radius, typography } from '../theme';
 import {
   REPORT_REASONS,
@@ -33,24 +33,9 @@ type Props = {
   onSubmitted: () => void;
 };
 
-export default function ReportUserModal(props: Props) {
-  // RN Modal renders outside the app-root KeyboardProvider — re-wrap it so the
-  // keyboard hooks work inside the modal's separate native window.
-  return (
-    <Modal
-      visible={props.visible}
-      transparent
-      animationType="slide"
-      onRequestClose={props.onCancel}
-    >
-      <KeyboardProvider>
-        <ReportSheet {...props} />
-      </KeyboardProvider>
-    </Modal>
-  );
-}
-
-function ReportSheet({
+// Rendered in-tree (NOT an RN Modal) so the keyboard-height hook measures
+// correctly — see MessageComposerModal for the full rationale.
+export default function ReportUserModal({
   visible,
   reportedId,
   reportedName,
@@ -66,9 +51,16 @@ function ReportSheet({
   const { height: kbHeight } = useReanimatedKeyboardAnimation();
   const { height: winHeight } = useWindowDimensions();
 
-  // Lift the sheet above the keyboard, and cap its height to the space that's
-  // left so the title never gets pushed off the top — the reason list shrinks
-  // and scrolls to absorb the squeeze.
+  useEffect(() => {
+    if (visible) {
+      setReason(null);
+      setNotes('');
+      setError(null);
+    }
+  }, [visible]);
+
+  // Lift above the keyboard, and cap the sheet to the space left so the title
+  // never gets pushed off the top — the reason list shrinks and scrolls.
   const sheetStyle = useAnimatedStyle(() => {
     const kb = Math.abs(kbHeight.value);
     return {
@@ -77,13 +69,7 @@ function ReportSheet({
     };
   });
 
-  useEffect(() => {
-    if (visible) {
-      setReason(null);
-      setNotes('');
-      setError(null);
-    }
-  }, [visible]);
+  if (!visible) return null;
 
   const canSubmit = reason !== null && !submitting;
 
@@ -101,110 +87,106 @@ function ReportSheet({
   };
 
   return (
-    <View style={styles.flex}>
-      <Pressable style={styles.backdrop} onPress={onCancel} />
+    <View style={styles.overlay}>
+      <Animated.View entering={FadeIn.duration(150)} style={styles.backdropWrap}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
+      </Animated.View>
       <Animated.View
-        style={[
-          styles.sheet,
-          sheetStyle,
-          { paddingBottom: spacing.lg + insets.bottom },
-        ]}
+        entering={SlideInDown.duration(200)}
+        style={[styles.sheet, sheetStyle, { paddingBottom: spacing.lg + insets.bottom }]}
       >
-          <View style={styles.handle} />
-          <Text style={styles.title}>Report {reportedName}</Text>
-          <Text style={styles.caption}>
-            Reports are anonymous to {reportedName}. We review them and may take action.
-          </Text>
+        <View style={styles.handle} />
+        <Text style={styles.title}>Report {reportedName}</Text>
+        <Text style={styles.caption}>
+          Reports are anonymous to {reportedName}. We review them and may take action.
+        </Text>
 
-          <ScrollView
-            style={styles.reasons}
-            contentContainerStyle={styles.reasonsContent}
+        <ScrollView style={styles.reasons} contentContainerStyle={styles.reasonsContent}>
+          {REPORT_REASONS.map((r) => {
+            const selected = reason === r.id;
+            return (
+              <Pressable
+                key={r.id}
+                onPress={() => setReason(r.id)}
+                style={({ pressed }) => [
+                  styles.reasonRow,
+                  selected && styles.reasonRowSelected,
+                  pressed && !selected && { opacity: 0.7 },
+                ]}
+              >
+                <View style={styles.reasonText}>
+                  <Text
+                    style={[styles.reasonLabel, selected && styles.reasonLabelSelected]}
+                  >
+                    {r.label}
+                  </Text>
+                  <Text style={styles.reasonDescription}>{r.description}</Text>
+                </View>
+                <Ionicons
+                  name={selected ? 'radio-button-on' : 'radio-button-off'}
+                  size={22}
+                  color={selected ? colors.primary : colors.textMuted}
+                />
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <TextInput
+          value={notes}
+          onChangeText={(t) => setNotes(t.slice(0, REPORT_NOTES_MAX))}
+          placeholder="Anything else we should know (optional)"
+          placeholderTextColor={colors.textMuted}
+          style={styles.notes}
+          multiline
+          maxLength={REPORT_NOTES_MAX}
+        />
+        <Text style={styles.counter}>
+          {notes.length}/{REPORT_NOTES_MAX}
+        </Text>
+
+        {error && <Text style={styles.errorText}>{error}</Text>}
+
+        <View style={styles.actions}>
+          <Pressable
+            onPress={onCancel}
+            disabled={submitting}
+            style={({ pressed }) => [
+              styles.btn,
+              styles.btnGhost,
+              pressed && styles.btnGhostPressed,
+            ]}
           >
-            {REPORT_REASONS.map((r) => {
-              const selected = reason === r.id;
-              return (
-                <Pressable
-                  key={r.id}
-                  onPress={() => setReason(r.id)}
-                  style={({ pressed }) => [
-                    styles.reasonRow,
-                    selected && styles.reasonRowSelected,
-                    pressed && !selected && { opacity: 0.7 },
-                  ]}
-                >
-                  <View style={styles.reasonText}>
-                    <Text
-                      style={[
-                        styles.reasonLabel,
-                        selected && styles.reasonLabelSelected,
-                      ]}
-                    >
-                      {r.label}
-                    </Text>
-                    <Text style={styles.reasonDescription}>{r.description}</Text>
-                  </View>
-                  <Ionicons
-                    name={selected ? 'radio-button-on' : 'radio-button-off'}
-                    size={22}
-                    color={selected ? colors.primary : colors.textMuted}
-                  />
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-
-          <TextInput
-            value={notes}
-            onChangeText={(t) => setNotes(t.slice(0, REPORT_NOTES_MAX))}
-            placeholder="Anything else we should know (optional)"
-            placeholderTextColor={colors.textMuted}
-            style={styles.notes}
-            multiline
-            maxLength={REPORT_NOTES_MAX}
-          />
-          <Text style={styles.counter}>
-            {notes.length}/{REPORT_NOTES_MAX}
-          </Text>
-
-          {error && <Text style={styles.errorText}>{error}</Text>}
-
-          <View style={styles.actions}>
-            <Pressable
-              onPressIn={() => !submitting && onCancel()}
-              disabled={submitting}
-              focusable={false}
-              style={({ pressed }) => [
-                styles.btn,
-                styles.btnGhost,
-                pressed && styles.btnGhostPressed,
-              ]}
-            >
-              <Text style={styles.btnGhostLabel}>Cancel</Text>
-            </Pressable>
-            <Pressable
-              disabled={!canSubmit}
-              onPressIn={onSubmit}
-              focusable={false}
-              style={({ pressed }) => [
-                styles.btn,
-                styles.btnPrimary,
-                !canSubmit && styles.btnDisabled,
-                pressed && canSubmit && styles.btnPrimaryPressed,
-              ]}
-            >
-              <Text style={styles.btnPrimaryLabel}>
-                {submitting ? 'Submitting…' : 'Submit'}
-              </Text>
-            </Pressable>
-          </View>
+            <Text style={styles.btnGhostLabel}>Cancel</Text>
+          </Pressable>
+          <Pressable
+            disabled={!canSubmit}
+            onPress={onSubmit}
+            style={({ pressed }) => [
+              styles.btn,
+              styles.btnPrimary,
+              !canSubmit && styles.btnDisabled,
+              pressed && canSubmit && styles.btnPrimaryPressed,
+            ]}
+          >
+            <Text style={styles.btnPrimaryLabel}>
+              {submitting ? 'Submitting…' : 'Submit'}
+            </Text>
+          </Pressable>
+        </View>
       </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: {
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    zIndex: 50,
+    elevation: 50,
+  },
+  backdropWrap: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.55)',
   },

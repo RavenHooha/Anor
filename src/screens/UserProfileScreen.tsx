@@ -233,27 +233,28 @@ export default function UserProfileScreen({ route, navigation }: Props) {
         <Text style={styles.blockLabel}>Block {user.name}</Text>
       </Pressable>
 
-        <MessageComposerModal
-          visible={composerOpen}
-          recipientName={user.name}
-          onCancel={() => setComposerOpen(false)}
-          onSend={onSendMessage}
-        />
-
-        <ReportUserModal
-          visible={reportOpen}
-          reportedId={user.id}
-          reportedName={user.name}
-          onCancel={() => setReportOpen(false)}
-          onSubmitted={() => {
-            setReportOpen(false);
-            Alert.alert(
-              'Report submitted',
-              'Thanks — we\'ll review it. You may want to block this person too.',
-            );
-          }}
-        />
       </ScrollView>
+
+      <MessageComposerModal
+        visible={composerOpen}
+        recipientName={user.name}
+        onCancel={() => setComposerOpen(false)}
+        onSend={onSendMessage}
+      />
+
+      <ReportUserModal
+        visible={reportOpen}
+        reportedId={user.id}
+        reportedName={user.name}
+        onCancel={() => setReportOpen(false)}
+        onSubmitted={() => {
+          setReportOpen(false);
+          Alert.alert(
+            'Report submitted',
+            'Thanks — we\'ll review it. You may want to block this person too.',
+          );
+        }}
+      />
     </SafeAreaView>
   );
 }

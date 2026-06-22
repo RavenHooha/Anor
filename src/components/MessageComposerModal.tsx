@@ -1,18 +1,12 @@
 import { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  Modal,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  KeyboardProvider,
-  useReanimatedKeyboardAnimation,
-} from 'react-native-keyboard-controller';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
+import Animated, {
+  useAnimatedStyle,
+  FadeIn,
+  SlideInDown,
+} from 'react-native-reanimated';
 import { colors, spacing, radius, typography } from '../theme';
 
 const MESSAGE_LIMIT = 120;
@@ -24,24 +18,16 @@ type Props = {
   onSend: (message: string) => void;
 };
 
-export default function MessageComposerModal(props: Props) {
-  // RN Modal renders in a separate native window, outside the app-root
-  // KeyboardProvider — so the keyboard hooks need it re-wrapped here.
-  return (
-    <Modal
-      visible={props.visible}
-      transparent
-      animationType="slide"
-      onRequestClose={props.onCancel}
-    >
-      <KeyboardProvider>
-        <ComposerSheet {...props} />
-      </KeyboardProvider>
-    </Modal>
-  );
-}
-
-function ComposerSheet({ visible, recipientName, onCancel, onSend }: Props) {
+// Rendered in-tree (NOT an RN Modal) so it lives under the app-root
+// KeyboardProvider, where the keyboard-height hook actually measures correctly.
+// Inside an RN Modal (a separate native window) the height comes back wrong on
+// Android and the sheet lifts short, leaving the buttons under the keyboard.
+export default function MessageComposerModal({
+  visible,
+  recipientName,
+  onCancel,
+  onSend,
+}: Props) {
   const [text, setText] = useState('');
   const insets = useSafeAreaInsets();
   const { height: kbHeight } = useReanimatedKeyboardAnimation();
@@ -50,20 +36,21 @@ function ComposerSheet({ visible, recipientName, onCancel, onSend }: Props) {
     if (visible) setText('');
   }, [visible]);
 
-  // Lift the sheet by the real keyboard height so the input never hides
-  // behind it. Same approach proven in ChatScreen — works on Android with
-  // edge-to-edge, where KeyboardAvoidingView does not.
   const liftStyle = useAnimatedStyle(() => ({
     marginBottom: Math.abs(kbHeight.value),
   }));
+
+  if (!visible) return null;
 
   const trimmed = text.trim();
   const canSend = trimmed.length > 0;
 
   return (
-    <View style={styles.flex}>
-      <Pressable style={styles.backdrop} onPress={onCancel} />
-      <Animated.View style={liftStyle}>
+    <View style={styles.overlay}>
+      <Animated.View entering={FadeIn.duration(150)} style={styles.backdropWrap}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
+      </Animated.View>
+      <Animated.View entering={SlideInDown.duration(200)} style={liftStyle}>
         <View style={[styles.sheet, { paddingBottom: spacing.xl + insets.bottom }]}>
           <View style={styles.handle} />
           <Text style={styles.title}>Message {recipientName}</Text>
@@ -85,8 +72,7 @@ function ComposerSheet({ visible, recipientName, onCancel, onSend }: Props) {
 
           <View style={styles.actions}>
             <Pressable
-              onPressIn={onCancel}
-              focusable={false}
+              onPress={onCancel}
               style={({ pressed }) => [
                 styles.btn,
                 styles.btnGhost,
@@ -97,8 +83,7 @@ function ComposerSheet({ visible, recipientName, onCancel, onSend }: Props) {
             </Pressable>
             <Pressable
               disabled={!canSend}
-              onPressIn={() => onSend(trimmed)}
-              focusable={false}
+              onPress={() => onSend(trimmed)}
               style={({ pressed }) => [
                 styles.btn,
                 styles.btnPrimary,
@@ -116,8 +101,13 @@ function ComposerSheet({ visible, recipientName, onCancel, onSend }: Props) {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: {
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    zIndex: 50,
+    elevation: 50,
+  },
+  backdropWrap: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.55)',
   },

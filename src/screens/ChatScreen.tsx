@@ -224,36 +224,6 @@ export default function ChatScreen({ route, navigation }: Props) {
         </View>
       )}
 
-      <MessageComposerModal
-        visible={openerComposerOpen}
-        recipientName={thread.otherName}
-        onCancel={() => setOpenerComposerOpen(false)}
-        onSend={async (text) => {
-          setOpenerComposerOpen(false);
-          try {
-            await createOrGetThread(thread.otherId, text);
-            await refreshThread();
-          } catch (e) {
-            setError(e instanceof Error ? e.message : 'Could not add message.');
-          }
-        }}
-      />
-
-      <ReportUserModal
-        visible={reportOpen}
-        reportedId={thread.otherId}
-        reportedName={thread.otherName}
-        contextThreadId={thread.id}
-        onCancel={() => setReportOpen(false)}
-        onSubmitted={() => {
-          setReportOpen(false);
-          Alert.alert(
-            'Report submitted',
-            'Thanks — we\'ll review it. You may want to block this person too.',
-          );
-        }}
-      />
-
       {atCap && (
         <View style={styles.capBanner}>
           <Text style={styles.capText}>
@@ -291,6 +261,36 @@ export default function ChatScreen({ route, navigation }: Props) {
 
         {error && <Text style={styles.errorText}>{error}</Text>}
       </Animated.View>
+
+      <MessageComposerModal
+        visible={openerComposerOpen}
+        recipientName={thread.otherName}
+        onCancel={() => setOpenerComposerOpen(false)}
+        onSend={async (text) => {
+          setOpenerComposerOpen(false);
+          try {
+            await createOrGetThread(thread.otherId, text);
+            await refreshThread();
+          } catch (e) {
+            setError(e instanceof Error ? e.message : 'Could not add message.');
+          }
+        }}
+      />
+
+      <ReportUserModal
+        visible={reportOpen}
+        reportedId={thread.otherId}
+        reportedName={thread.otherName}
+        contextThreadId={thread.id}
+        onCancel={() => setReportOpen(false)}
+        onSubmitted={() => {
+          setReportOpen(false);
+          Alert.alert(
+            'Report submitted',
+            'Thanks — we\'ll review it. You may want to block this person too.',
+          );
+        }}
+      />
     </SafeAreaView>
   );
 }
