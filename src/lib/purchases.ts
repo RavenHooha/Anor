@@ -19,6 +19,11 @@ export function configurePurchases(): void {
   if (configured) return;
   const apiKey = Platform.OS === 'ios' ? IOS_KEY : ANDROID_KEY;
   if (!apiKey) return; // not set up yet — stay disabled
+  // Test-store keys (test_…) are only valid in debug builds; in a release
+  // build RevenueCat rejects them and force-closes the app. Skip config in
+  // that case so the app runs with billing simply disabled until a real
+  // production (goog_…) key is set.
+  if (!__DEV__ && apiKey.startsWith('test_')) return;
   try {
     Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.WARN : LOG_LEVEL.ERROR);
     Purchases.configure({ apiKey });
