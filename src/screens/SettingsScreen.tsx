@@ -26,6 +26,13 @@ import {
 import { setAnalyticsOptedIn as setAnalyticsOptedInClient } from '../lib/analytics';
 import { supabase } from '../lib/supabase';
 import { TOS_URL, PRIVACY_POLICY_URL, supportMailto } from '../lib/links';
+import {
+  startBackgroundPresence,
+  stopBackgroundPresence,
+  isBackgroundPresenceRunning,
+  getBgBreadcrumb,
+  type BgBreadcrumb,
+} from '../location/backgroundPresence';
 import type { RootStackParamList } from '../navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -36,13 +43,41 @@ export default function SettingsScreen() {
   const [savingPreview, setSavingPreview] = useState(false);
   const [savingAnalytics, setSavingAnalytics] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [discoverable, setDiscoverable] = useState(false);
+  const [savingDiscoverable, setSavingDiscoverable] = useState(false);
+  const [crumb, setCrumb] = useState<BgBreadcrumb | null>(null);
   const navigation = useNavigation<Nav>();
 
   useFocusEffect(
     useCallback(() => {
       getMyProfile().then(setProfile);
+      isBackgroundPresenceRunning().then(setDiscoverable);
+      getBgBreadcrumb().then(setCrumb);
     }, []),
   );
+
+  const onToggleDiscoverable = async (next: boolean) => {
+    if (savingDiscoverable) return;
+    setSavingDiscoverable(true);
+    setDiscoverable(next);
+    try {
+      if (next) {
+        const err = await startBackgroundPresence();
+        if (err) {
+          setDiscoverable(false);
+          Alert.alert('Could not turn on', err);
+        }
+      } else {
+        await stopBackgroundPresence();
+      }
+    } catch (e) {
+      setDiscoverable(!next);
+      Alert.alert('Could not save', e instanceof Error ? e.message : 'Try again.');
+    } finally {
+      setSavingDiscoverable(false);
+      getBgBreadcrumb().then(setCrumb);
+    }
+  };
 
   const onSignOut = async () => {
     if (signingOut) return;
@@ -140,6 +175,39 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        <Text style={styles.sectionLabel}>Discoverable (beta)</Text>
+
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleText}>
+            <Text style={styles.linkLabel}>Let nearby people find me</Text>
+            <Text style={styles.toggleHint}>
+              Keeps your spot fresh in the background so people at the same venue
+              can see you're open to connect. Off by default.
+            </Text>
+          </View>
+          <Switch
+            value={discoverable}
+            onValueChange={onToggleDiscoverable}
+            disabled={savingDiscoverable}
+            trackColor={{ false: colors.surfaceElevated, true: colors.primary }}
+            thumbColor={colors.textPrimary}
+          />
+        </View>
+
+        {crumb && (
+          <Pressable
+            onPress={() => getBgBreadcrumb().then(setCrumb)}
+            style={styles.crumbRow}
+          >
+            <Text style={[styles.crumbText, { color: crumb.ok ? colors.primary : colors.secondary }]}>
+              {crumb.ok ? '✓' : '✕'} last bg run #{crumb.count} ·{' '}
+              {new Date(crumb.at).toLocaleTimeString()}
+            </Text>
+            <Text style={styles.crumbDetail}>{crumb.msg}</Text>
+            <Text style={styles.crumbHint}>tap to refresh</Text>
+          </Pressable>
+        )}
+
         <Text style={styles.sectionLabel}>Safety</Text>
 
         <Pressable
@@ -286,6 +354,16 @@ const styles = StyleSheet.create({
   },
   toggleText: { flex: 1, gap: 2 },
   toggleHint: { ...typography.caption, color: colors.textMuted },
+  crumbRow: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+    gap: 2,
+  },
+  crumbText: { ...typography.caption, fontWeight: '600' },
+  crumbDetail: { ...typography.caption, color: colors.textSecondary },
+  crumbHint: { ...typography.caption, color: colors.textMuted, fontSize: 11 },
   signOutBtn: {
     borderWidth: 1,
     borderColor: colors.border,

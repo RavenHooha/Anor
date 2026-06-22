@@ -57,7 +57,10 @@
         "android.permission.BLUETOOTH_ADVERTISE",
         "android.permission.BLUETOOTH_CONNECT",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
       ],
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
@@ -85,7 +88,11 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Anor uses your location to find people nearby."
+          "locationWhenInUsePermission": "Anor uses your location to find people nearby.",
+          "locationAlwaysAndWhenInUsePermission": "Anor uses your location in the background so people at the same venue can see you're open to connect — only while you're set to Discoverable.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
         }
       ],
       [

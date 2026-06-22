@@ -1,5 +1,8 @@
 import { registerRootComponent } from 'expo';
 
+// Import for its side effect: TaskManager.defineTask must run in global scope
+// before the OS can invoke the background task on cold start.
+import './src/location/backgroundPresence';
 import App from './App';
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
