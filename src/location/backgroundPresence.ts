@@ -125,26 +125,13 @@ async function checkinPresence(
   };
 }
 
-// Must be defined in module/global scope so the OS can invoke it on cold start.
-TaskManager.defineTask(BG_PRESENCE_TASK, async ({ data, error }) => {
-  if (error) {
-    await writeBreadcrumb(false, `task error: ${error.message}`);
-    return;
-  }
-
-  const locations = (data as { locations?: Location.LocationObject[] })?.locations;
-  const pos = locations?.[locations.length - 1];
-  if (!pos) {
-    await writeBreadcrumb(false, 'task fired with no location');
-    return;
-  }
-
-  const coords = {
-    lat: pos.coords.latitude,
-    lng: pos.coords.longitude,
-    accuracy: Math.round(pos.coords.accuracy ?? 0),
-  };
-
+// Shared by both the background task and the foreground "check now" path:
+// authenticate, write location + advance the dwell state, drop a breadcrumb.
+async function runCheckin(coords: {
+  lat: number;
+  lng: number;
+  accuracy: number;
+}): Promise<void> {
   const auth = await ensureAuthedUserId();
   if (!auth.id) {
     await writeBreadcrumb(false, `auth: ${auth.reason}`);
@@ -167,7 +154,53 @@ TaskManager.defineTask(BG_PRESENCE_TASK, async ({ data, error }) => {
     msg = `presence ok (${auth.reason}) — no venue`;
   }
   await writeBreadcrumb(true, msg);
+}
+
+// Must be defined in module/global scope so the OS can invoke it on cold start.
+TaskManager.defineTask(BG_PRESENCE_TASK, async ({ data, error }) => {
+  if (error) {
+    await writeBreadcrumb(false, `task error: ${error.message}`);
+    return;
+  }
+
+  const locations = (data as { locations?: Location.LocationObject[] })?.locations;
+  const pos = locations?.[locations.length - 1];
+  if (!pos) {
+    await writeBreadcrumb(false, 'task fired with no location');
+    return;
+  }
+
+  await runCheckin({
+    lat: pos.coords.latitude,
+    lng: pos.coords.longitude,
+    accuracy: Math.round(pos.coords.accuracy ?? 0),
+  });
 });
+
+/**
+ * Force a check-in right now from the foreground — grabs a fresh fix and runs
+ * the dwell evaluation immediately, instead of waiting for a background ping
+ * (Android throttles stationary background location hard). Returns the updated
+ * breadcrumb.
+ */
+export async function foregroundCheckin(): Promise<BgBreadcrumb | null> {
+  try {
+    const pos = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
+    await runCheckin({
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+      accuracy: Math.round(pos.coords.accuracy ?? 0),
+    });
+  } catch (e) {
+    await writeBreadcrumb(
+      false,
+      `check now: ${e instanceof Error ? e.message : 'failed'}`,
+    );
+  }
+  return readBreadcrumb();
+}
 
 export async function isBackgroundPresenceRunning(): Promise<boolean> {
   try {

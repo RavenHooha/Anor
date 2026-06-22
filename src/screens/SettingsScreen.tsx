@@ -32,6 +32,7 @@ import {
   getBgBreadcrumb,
   getDiscoverablePref,
   setDiscoverablePref,
+  foregroundCheckin,
   type BgBreadcrumb,
 } from '../location/backgroundPresence';
 import type { RootStackParamList } from '../navigation/types';
@@ -47,7 +48,19 @@ export default function SettingsScreen() {
   const [discoverable, setDiscoverable] = useState(false);
   const [savingDiscoverable, setSavingDiscoverable] = useState(false);
   const [crumb, setCrumb] = useState<BgBreadcrumb | null>(null);
+  const [checking, setChecking] = useState(false);
   const navigation = useNavigation<Nav>();
+
+  const onCheckNow = async () => {
+    if (checking) return;
+    setChecking(true);
+    try {
+      const next = await foregroundCheckin();
+      setCrumb(next);
+    } finally {
+      setChecking(false);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -198,17 +211,27 @@ export default function SettingsScreen() {
           />
         </View>
 
-        {crumb && (
-          <Pressable
-            onPress={() => getBgBreadcrumb().then(setCrumb)}
-            style={styles.crumbRow}
-          >
-            <Text style={[styles.crumbText, { color: crumb.ok ? colors.primary : colors.secondary }]}>
-              {crumb.ok ? '✓' : '✕'} last bg run #{crumb.count} ·{' '}
-              {new Date(crumb.at).toLocaleTimeString()}
+        {(crumb || discoverable) && (
+          <Pressable onPress={onCheckNow} style={styles.crumbRow}>
+            {crumb ? (
+              <>
+                <Text
+                  style={[
+                    styles.crumbText,
+                    { color: crumb.ok ? colors.primary : colors.secondary },
+                  ]}
+                >
+                  {crumb.ok ? '✓' : '✕'} run #{crumb.count} ·{' '}
+                  {new Date(crumb.at).toLocaleTimeString()}
+                </Text>
+                <Text style={styles.crumbDetail}>{crumb.msg}</Text>
+              </>
+            ) : (
+              <Text style={styles.crumbDetail}>No check-in yet.</Text>
+            )}
+            <Text style={styles.crumbHint}>
+              {checking ? 'checking…' : 'tap to check in now'}
             </Text>
-            <Text style={styles.crumbDetail}>{crumb.msg}</Text>
-            <Text style={styles.crumbHint}>tap to refresh</Text>
           </Pressable>
         )}
 
