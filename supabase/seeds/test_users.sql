@@ -73,3 +73,65 @@ begin
       updated_at = excluded.updated_at;
   end loop;
 end $$;
+
+-- Test seed: drops fake users CHECKED IN (dwell-confirmed) at a seeded venue, so
+-- the "Here at {venue}" co-presence section has someone to show. You still have
+-- to be dwell-confirmed at the same venue yourself for it to appear.
+--
+--   select seed_test_copresence();                          -- default test venue
+--   select seed_test_copresence('Blue Bottle Coffee');      -- a specific venue
+--
+-- Re-run if it goes stale (>5 min). Clean up with:
+--   delete from auth.users where email like 'copre-%@anor.test';
+create or replace function seed_test_copresence(p_venue_name text default 'Test Venue (delete me)')
+returns void
+language plpgsql
+set search_path = public, pg_temp
+as $$
+declare
+  v_id uuid;
+  v_loc geography;
+  user_data jsonb := '[
+    {"email": "copre-ada@anor.test",  "name": "Ada",  "bio": "here for the playlist.", "photo": "https://i.pravatar.cc/300?img=20", "status": "open"},
+    {"email": "copre-juno@anor.test", "name": "Juno", "bio": "skip the small talk.",    "photo": "https://i.pravatar.cc/300?img=15", "status": "spark"}
+  ]'::jsonb;
+  rec jsonb;
+  uid uuid;
+begin
+  select id, location into v_id, v_loc
+  from venues where name = p_venue_name and active limit 1;
+  if v_id is null then
+    raise exception 'No active venue named %, seed it first', p_venue_name;
+  end if;
+
+  for rec in select * from jsonb_array_elements(user_data) loop
+    select id into uid from auth.users where email = rec->>'email';
+    if uid is null then
+      uid := gen_random_uuid();
+      insert into auth.users (
+        id, instance_id, email, role, aud, created_at, updated_at,
+        raw_app_meta_data, raw_user_meta_data, email_confirmed_at, encrypted_password
+      ) values (
+        uid, '00000000-0000-0000-0000-000000000000', rec->>'email',
+        'authenticated', 'authenticated', now(), now(),
+        '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), ''
+      );
+    end if;
+
+    insert into profiles (id, name, photo_url, bio)
+    values (uid, rec->>'name', rec->>'photo', rec->>'bio')
+    on conflict (id) do update set
+      name = excluded.name, photo_url = excluded.photo_url, bio = excluded.bio;
+
+    -- venue_since 10 min ago → already past the 4-min dwell threshold.
+    insert into presence (user_id, status, location, accuracy_m, venue_id, venue_since, updated_at)
+    values (uid, rec->>'status', v_loc, 10, v_id, now() - interval '10 minutes', now())
+    on conflict (user_id) do update set
+      status = excluded.status,
+      location = excluded.location,
+      accuracy_m = excluded.accuracy_m,
+      venue_id = excluded.venue_id,
+      venue_since = excluded.venue_since,
+      updated_at = excluded.updated_at;
+  end loop;
+end $$;
