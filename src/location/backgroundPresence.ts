@@ -15,7 +15,10 @@ import { colors } from '../theme';
 
 export const BG_PRESENCE_TASK = 'anor-bg-presence';
 const BREADCRUMB_KEY = 'anor.bgPresence.lastRun';
+const LAST_BG_KEY = 'anor.bgPresence.lastBackground';
 const DISCOVERABLE_PREF_KEY = 'anor.discoverable.pref';
+
+export type CheckinSource = 'bg' | 'fg';
 
 // The user's *intent* — separate from whether the OS task is currently alive.
 // The toggle reflects this so it survives navigation and app restarts; the
@@ -40,7 +43,16 @@ export type BgBreadcrumb = {
   at: string; // ISO timestamp
   ok: boolean;
   msg: string;
-  count: number; // total runs recorded
+  count: number; // total runs recorded (any source)
+  source: CheckinSource;
+};
+
+// Separate record of the last *background* ping only — foreground re-checks
+// (opening the app) never touch it, so it's a clean signal for "is the OS
+// actually firing the task while the app is idle?".
+export type LastBgRun = {
+  at: string; // ISO timestamp
+  count: number; // number of background pings recorded
 };
 
 async function readBreadcrumb(): Promise<BgBreadcrumb | null> {
@@ -56,7 +68,20 @@ export async function getBgBreadcrumb(): Promise<BgBreadcrumb | null> {
   return readBreadcrumb();
 }
 
-async function writeBreadcrumb(ok: boolean, msg: string): Promise<void> {
+export async function getLastBgRun(): Promise<LastBgRun | null> {
+  try {
+    const raw = await AsyncStorage.getItem(LAST_BG_KEY);
+    return raw ? (JSON.parse(raw) as LastBgRun) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function writeBreadcrumb(
+  ok: boolean,
+  msg: string,
+  source: CheckinSource,
+): Promise<void> {
   try {
     const prev = await readBreadcrumb();
     const next: BgBreadcrumb = {
@@ -64,8 +89,20 @@ async function writeBreadcrumb(ok: boolean, msg: string): Promise<void> {
       ok,
       msg,
       count: (prev?.count ?? 0) + 1,
+      source,
     };
     await AsyncStorage.setItem(BREADCRUMB_KEY, JSON.stringify(next));
+
+    // Track background pings separately so the idle test isn't muddied by
+    // foreground re-checks.
+    if (source === 'bg') {
+      const prevBg = await getLastBgRun();
+      const nextBg: LastBgRun = {
+        at: next.at,
+        count: (prevBg?.count ?? 0) + 1,
+      };
+      await AsyncStorage.setItem(LAST_BG_KEY, JSON.stringify(nextBg));
+    }
   } catch {
     // Breadcrumb is best-effort; never let it crash the task.
   }
@@ -127,20 +164,19 @@ async function checkinPresence(
 
 // Shared by both the background task and the foreground "check now" path:
 // authenticate, write location + advance the dwell state, drop a breadcrumb.
-async function runCheckin(coords: {
-  lat: number;
-  lng: number;
-  accuracy: number;
-}): Promise<void> {
+async function runCheckin(
+  coords: { lat: number; lng: number; accuracy: number },
+  source: CheckinSource,
+): Promise<void> {
   const auth = await ensureAuthedUserId();
   if (!auth.id) {
-    await writeBreadcrumb(false, `auth: ${auth.reason}`);
+    await writeBreadcrumb(false, `auth: ${auth.reason}`, source);
     return;
   }
 
   const result = await checkinPresence(coords);
   if ('error' in result) {
-    await writeBreadcrumb(false, `checkin: ${result.error}`);
+    await writeBreadcrumb(false, `checkin: ${result.error}`, source);
     return;
   }
 
@@ -153,28 +189,31 @@ async function runCheckin(coords: {
   } else {
     msg = `presence ok (${auth.reason}) — no venue`;
   }
-  await writeBreadcrumb(true, msg);
+  await writeBreadcrumb(true, msg, source);
 }
 
 // Must be defined in module/global scope so the OS can invoke it on cold start.
 TaskManager.defineTask(BG_PRESENCE_TASK, async ({ data, error }) => {
   if (error) {
-    await writeBreadcrumb(false, `task error: ${error.message}`);
+    await writeBreadcrumb(false, `task error: ${error.message}`, 'bg');
     return;
   }
 
   const locations = (data as { locations?: Location.LocationObject[] })?.locations;
   const pos = locations?.[locations.length - 1];
   if (!pos) {
-    await writeBreadcrumb(false, 'task fired with no location');
+    await writeBreadcrumb(false, 'task fired with no location', 'bg');
     return;
   }
 
-  await runCheckin({
-    lat: pos.coords.latitude,
-    lng: pos.coords.longitude,
-    accuracy: Math.round(pos.coords.accuracy ?? 0),
-  });
+  await runCheckin(
+    {
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+      accuracy: Math.round(pos.coords.accuracy ?? 0),
+    },
+    'bg',
+  );
 });
 
 /**
@@ -196,18 +235,22 @@ export async function foregroundCheckin(): Promise<BgBreadcrumb | null> {
       ]);
     }
     if (!pos) {
-      await writeBreadcrumb(false, 'check now: no location fix (timed out)');
+      await writeBreadcrumb(false, 'check now: no location fix (timed out)', 'fg');
       return readBreadcrumb();
     }
-    await runCheckin({
-      lat: pos.coords.latitude,
-      lng: pos.coords.longitude,
-      accuracy: Math.round(pos.coords.accuracy ?? 0),
-    });
+    await runCheckin(
+      {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: Math.round(pos.coords.accuracy ?? 0),
+      },
+      'fg',
+    );
   } catch (e) {
     await writeBreadcrumb(
       false,
       `check now: ${e instanceof Error ? e.message : 'failed'}`,
+      'fg',
     );
   }
   return readBreadcrumb();

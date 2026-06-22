@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -30,14 +30,24 @@ import {
   startBackgroundPresence,
   stopBackgroundPresence,
   getBgBreadcrumb,
+  getLastBgRun,
   getDiscoverablePref,
   setDiscoverablePref,
   foregroundCheckin,
   type BgBreadcrumb,
+  type LastBgRun,
 } from '../location/backgroundPresence';
 import type { RootStackParamList } from '../navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+function timeAgo(iso: string): string {
+  const secs = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+  if (secs < 60) return `${secs}s ago`;
+  const mins = Math.round(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  return `${Math.round(mins / 60)}h ago`;
+}
 
 export default function SettingsScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -48,7 +58,10 @@ export default function SettingsScreen() {
   const [discoverable, setDiscoverable] = useState(false);
   const [savingDiscoverable, setSavingDiscoverable] = useState(false);
   const [crumb, setCrumb] = useState<BgBreadcrumb | null>(null);
+  const [lastBg, setLastBg] = useState<LastBgRun | null>(null);
   const [checking, setChecking] = useState(false);
+  const [, forceTick] = useState(0);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const navigation = useNavigation<Nav>();
 
   const onCheckNow = async () => {
@@ -66,7 +79,19 @@ export default function SettingsScreen() {
     useCallback(() => {
       getMyProfile().then(setProfile);
       getDiscoverablePref().then(setDiscoverable);
-      getBgBreadcrumb().then(setCrumb);
+
+      // Live, read-only poll so the breadcrumb + last-background-ping reflect
+      // reality without tapping (tapping would mutate the very thing we watch).
+      const refresh = () => {
+        getBgBreadcrumb().then(setCrumb);
+        getLastBgRun().then(setLastBg);
+        forceTick((n) => n + 1); // re-render so "Nm ago" stays current
+      };
+      refresh();
+      pollRef.current = setInterval(refresh, 3_000);
+      return () => {
+        if (pollRef.current) clearInterval(pollRef.current);
+      };
     }, []),
   );
 
@@ -221,14 +246,19 @@ export default function SettingsScreen() {
                     { color: crumb.ok ? colors.primary : colors.secondary },
                   ]}
                 >
-                  {crumb.ok ? '✓' : '✕'} run #{crumb.count} ·{' '}
-                  {new Date(crumb.at).toLocaleTimeString()}
+                  {crumb.ok ? '✓' : '✕'} run #{crumb.count} ({crumb.source}) ·{' '}
+                  {timeAgo(crumb.at)}
                 </Text>
                 <Text style={styles.crumbDetail}>{crumb.msg}</Text>
               </>
             ) : (
               <Text style={styles.crumbDetail}>No check-in yet.</Text>
             )}
+            <Text style={styles.crumbBg}>
+              {lastBg
+                ? `background pings: ${lastBg.count} · last ${timeAgo(lastBg.at)}`
+                : 'background pings: none yet'}
+            </Text>
             <Text style={styles.crumbHint}>
               {checking ? 'checking…' : 'tap to check in now'}
             </Text>
@@ -390,6 +420,7 @@ const styles = StyleSheet.create({
   },
   crumbText: { ...typography.caption, fontWeight: '600' },
   crumbDetail: { ...typography.caption, color: colors.textSecondary },
+  crumbBg: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   crumbHint: { ...typography.caption, color: colors.textMuted, fontSize: 11 },
   signOutBtn: {
     borderWidth: 1,
