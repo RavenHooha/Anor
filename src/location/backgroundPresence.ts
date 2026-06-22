@@ -237,11 +237,14 @@ export async function startBackgroundPresence(): Promise<string | null> {
 
   await Location.startLocationUpdatesAsync(BG_PRESENCE_TASK, {
     accuracy: Location.Accuracy.Balanced,
-    distanceInterval: 50, // meters — coarse on purpose (battery + privacy)
-    timeInterval: 120_000, // also ping ~every 2 min while stationary, so the
-    // venue dwell clock keeps advancing when the user is sitting still
-    deferredUpdatesInterval: 60_000,
-    pausesUpdatesAutomatically: false,
+    // CRITICAL: no distanceInterval. On Android that maps to setSmallestDisplacement,
+    // a movement FILTER — with it set, a stationary phone (0 m moved) gets NO
+    // updates regardless of timeInterval, so the dwell clock never advances while
+    // you sit at a venue. Time-only heartbeat is what makes passive dwell work.
+    timeInterval: 150_000, // ~2.5 min heartbeat, moving or still
+    distanceInterval: 0,
+    pausesUpdatesAutomatically: false, // iOS: don't auto-pause when stationary
+    activityType: Location.ActivityType.Other, // iOS
     showsBackgroundLocationIndicator: false,
     foregroundService: {
       notificationTitle: 'Anor is discoverable',

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { View, AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -29,6 +29,7 @@ import UpdateOverlay from './src/components/UpdateOverlay';
 import {
   getDiscoverablePref,
   startBackgroundPresence,
+  foregroundCheckin,
 } from './src/location/backgroundPresence';
 
 // Crash reporting. Privacy notes:
@@ -126,6 +127,22 @@ function App() {
     getDiscoverablePref().then((on) => {
       if (on) startBackgroundPresence().catch(() => {});
     });
+  }, [session]);
+
+  // Refresh presence + advance the venue dwell whenever the app comes to the
+  // foreground. Belt-and-suspenders with the background heartbeat: even if
+  // Android throttled background pings while the phone sat idle, opening the app
+  // re-checks you in immediately, so your spot and dwell are always current
+  // during active use.
+  useEffect(() => {
+    if (!session) return;
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      getDiscoverablePref().then((on) => {
+        if (on) foregroundCheckin().catch(() => {});
+      });
+    });
+    return () => sub.remove();
   }, [session]);
 
   // Tap on a notification → navigate to the relevant Chat thread.
