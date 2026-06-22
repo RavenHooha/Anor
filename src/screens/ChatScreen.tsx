@@ -10,7 +10,7 @@ import {
   Alert,
   DeviceEventEmitter,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { blockUser } from '../storage/blocks';
 import { track } from '../lib/analytics';
@@ -31,8 +31,8 @@ import { subscribeToThreadMessages } from '../storage/realtime';
 import MessageComposerModal from '../components/MessageComposerModal';
 import { getMyProfile } from '../storage/profile';
 import { supabase } from '../lib/supabase';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import { useHeaderHeight } from '@react-navigation/elements';
+import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -51,7 +51,15 @@ export default function ChatScreen({ route, navigation }: Props) {
   const [openerComposerOpen, setOpenerComposerOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const listRef = useRef<FlatList<Message>>(null);
-  const headerHeight = useHeaderHeight();
+  const insets = useSafeAreaInsets();
+  const { height: kbHeight } = useReanimatedKeyboardAnimation();
+
+  // Drive the composer directly off the real-time native keyboard height:
+  // pad the bottom by exactly the keyboard height (so the composer sits flush
+  // on it), or by the nav-bar inset when the keyboard is down.
+  const liftStyle = useAnimatedStyle(() => ({
+    paddingBottom: Math.max(insets.bottom, Math.abs(kbHeight.value)),
+  }), [insets.bottom]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setMeId(data.user?.id ?? null));
@@ -172,12 +180,8 @@ export default function ChatScreen({ route, navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior="padding"
-        keyboardVerticalOffset={headerHeight}
-      >
+    <SafeAreaView style={styles.safe} edges={[]}>
+      <Animated.View style={[styles.flex, liftStyle]}>
         <FlatList
         ref={listRef}
         data={messages}
@@ -286,7 +290,7 @@ export default function ChatScreen({ route, navigation }: Props) {
       )}
 
         {error && <Text style={styles.errorText}>{error}</Text>}
-      </KeyboardAvoidingView>
+      </Animated.View>
     </SafeAreaView>
   );
 }

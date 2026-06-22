@@ -25,6 +25,7 @@ import {
   track,
 } from './src/lib/analytics';
 import { colors } from './src/theme';
+import UpdateOverlay from './src/components/UpdateOverlay';
 
 // Crash reporting. Privacy notes:
 // - sendDefaultPii: false → no IP, no cookies, no auto-captured user info
@@ -65,6 +66,7 @@ Sentry.init({
 function App() {
   const { session, loaded: sessionLoaded } = useSession();
   const [hasProfile, setHasProfile] = useState<boolean | null>(null);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     return startAuthLinkListener();
@@ -90,6 +92,7 @@ function App() {
       try {
         const update = await Updates.checkForUpdateAsync();
         if (update.isAvailable) {
+          setUpdating(true);
           await Updates.fetchUpdateAsync();
           await Updates.reloadAsync();
         }
@@ -161,6 +164,7 @@ function App() {
         ) : (
           <View style={{ flex: 1, backgroundColor: colors.background }} />
         )}
+        {updating && <UpdateOverlay />}
       </KeyboardProvider>
     </SafeAreaProvider>
   );
