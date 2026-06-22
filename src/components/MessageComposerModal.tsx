@@ -6,10 +6,13 @@ import {
   Pressable,
   Modal,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  KeyboardProvider,
+  useReanimatedKeyboardAnimation,
+} from 'react-native-keyboard-controller';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { colors, spacing, radius, typography } from '../theme';
 
 const MESSAGE_LIMIT = 120;
@@ -21,40 +24,50 @@ type Props = {
   onSend: (message: string) => void;
 };
 
-export default function MessageComposerModal({
-  visible,
-  recipientName,
-  onCancel,
-  onSend,
-}: Props) {
+export default function MessageComposerModal(props: Props) {
+  // RN Modal renders in a separate native window, outside the app-root
+  // KeyboardProvider — so the keyboard hooks need it re-wrapped here.
+  return (
+    <Modal
+      visible={props.visible}
+      transparent
+      animationType="slide"
+      onRequestClose={props.onCancel}
+    >
+      <KeyboardProvider>
+        <ComposerSheet {...props} />
+      </KeyboardProvider>
+    </Modal>
+  );
+}
+
+function ComposerSheet({ visible, recipientName, onCancel, onSend }: Props) {
   const [text, setText] = useState('');
   const insets = useSafeAreaInsets();
+  const { height: kbHeight } = useReanimatedKeyboardAnimation();
 
   useEffect(() => {
     if (visible) setText('');
   }, [visible]);
 
+  // Lift the sheet by the real keyboard height so the input never hides
+  // behind it. Same approach proven in ChatScreen — works on Android with
+  // edge-to-edge, where KeyboardAvoidingView does not.
+  const liftStyle = useAnimatedStyle(() => ({
+    marginBottom: Math.abs(kbHeight.value),
+  }));
+
   const trimmed = text.trim();
   const canSend = trimmed.length > 0;
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onCancel}
-    >
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <Pressable style={styles.backdrop} onPress={onCancel} />
+    <View style={styles.flex}>
+      <Pressable style={styles.backdrop} onPress={onCancel} />
+      <Animated.View style={liftStyle}>
         <View style={[styles.sheet, { paddingBottom: spacing.xl + insets.bottom }]}>
           <View style={styles.handle} />
           <Text style={styles.title}>Message {recipientName}</Text>
-          <Text style={typography.caption}>
-            One opener. Make it count.
-          </Text>
+          <Text style={typography.caption}>One opener. Make it count.</Text>
 
           <TextInput
             value={text}
@@ -95,8 +108,8 @@ export default function MessageComposerModal({
             </Pressable>
           </View>
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+      </Animated.View>
+    </View>
   );
 }
 

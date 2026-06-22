@@ -6,12 +6,16 @@ import {
   Pressable,
   Modal,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  KeyboardProvider,
+  useReanimatedKeyboardAnimation,
+} from 'react-native-keyboard-controller';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { colors, spacing, radius, typography } from '../theme';
 import {
   REPORT_REASONS,
@@ -29,7 +33,24 @@ type Props = {
   onSubmitted: () => void;
 };
 
-export default function ReportUserModal({
+export default function ReportUserModal(props: Props) {
+  // RN Modal renders outside the app-root KeyboardProvider — re-wrap it so the
+  // keyboard hooks work inside the modal's separate native window.
+  return (
+    <Modal
+      visible={props.visible}
+      transparent
+      animationType="slide"
+      onRequestClose={props.onCancel}
+    >
+      <KeyboardProvider>
+        <ReportSheet {...props} />
+      </KeyboardProvider>
+    </Modal>
+  );
+}
+
+function ReportSheet({
   visible,
   reportedId,
   reportedName,
@@ -42,6 +63,19 @@ export default function ReportUserModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
+  const { height: kbHeight } = useReanimatedKeyboardAnimation();
+  const { height: winHeight } = useWindowDimensions();
+
+  // Lift the sheet above the keyboard, and cap its height to the space that's
+  // left so the title never gets pushed off the top — the reason list shrinks
+  // and scrolls to absorb the squeeze.
+  const sheetStyle = useAnimatedStyle(() => {
+    const kb = Math.abs(kbHeight.value);
+    return {
+      marginBottom: kb,
+      maxHeight: Math.min(winHeight * 0.92, winHeight - kb - insets.top - 8),
+    };
+  });
 
   useEffect(() => {
     if (visible) {
@@ -67,23 +101,15 @@ export default function ReportUserModal({
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onCancel}
-    >
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    <View style={styles.flex}>
+      <Pressable style={styles.backdrop} onPress={onCancel} />
+      <Animated.View
+        style={[
+          styles.sheet,
+          sheetStyle,
+          { paddingBottom: spacing.lg + insets.bottom },
+        ]}
       >
-        <Pressable style={styles.backdrop} onPress={onCancel} />
-        <View
-          style={[
-            styles.sheet,
-            { paddingBottom: spacing.lg + insets.bottom },
-          ]}
-        >
           <View style={styles.handle} />
           <Text style={styles.title}>Report {reportedName}</Text>
           <Text style={styles.caption}>
@@ -169,9 +195,8 @@ export default function ReportUserModal({
               </Text>
             </Pressable>
           </View>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -188,7 +213,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     gap: spacing.sm,
-    maxHeight: '92%',
   },
   handle: {
     alignSelf: 'center',
@@ -200,7 +224,7 @@ const styles = StyleSheet.create({
   },
   title: { ...typography.title },
   caption: { ...typography.caption },
-  reasons: { maxHeight: 320 },
+  reasons: { maxHeight: 320, flexShrink: 1 },
   reasonsContent: { gap: spacing.xs, paddingVertical: spacing.sm },
   reasonRow: {
     flexDirection: 'row',
