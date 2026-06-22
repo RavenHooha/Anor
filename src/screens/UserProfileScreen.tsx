@@ -188,50 +188,52 @@ export default function UserProfileScreen({ route, navigation }: Props) {
 
       {error && <Text style={styles.errorText}>{error}</Text>}
 
-      <Pressable
-        onPress={() => setReportOpen(true)}
-        style={({ pressed }) => [
-          styles.secondaryAction,
-          pressed && { opacity: 0.6 },
-        ]}
-      >
-        <Text style={styles.secondaryActionLabel}>Report {user.name}</Text>
-      </Pressable>
+      <View style={styles.safetyRow}>
+        <Pressable
+          onPress={() => setReportOpen(true)}
+          hitSlop={8}
+          style={({ pressed }) => [styles.safetyItem, pressed && { opacity: 0.5 }]}
+        >
+          <Ionicons name="flag-outline" size={15} color={colors.textMuted} />
+          <Text style={styles.safetyText}>Report</Text>
+        </Pressable>
 
-      <Pressable
-        onPress={() => {
-          Alert.alert(
-            `Block ${user.name}?`,
-            `You won't see ${user.name} in your nearby feed or messages, and they won't see you. This can be undone later.`,
-            [
-              { text: 'Cancel', style: 'cancel' },
-              {
-                text: 'Block',
-                style: 'destructive',
-                onPress: () => {
-                  // Optimistic close — block in background. On success,
-                  // emit so dependent screens (ThreadsList, Home) refetch.
-                  navigation.goBack();
-                  blockUser(user.id)
-                    .then(() => DeviceEventEmitter.emit('blockChanged'))
-                    .catch((e) => {
-                      Alert.alert(
-                        'Block failed',
-                        e instanceof Error ? e.message : 'Try again.',
-                      );
-                    });
+        <View style={styles.safetyDivider} />
+
+        <Pressable
+          hitSlop={8}
+          onPress={() => {
+            Alert.alert(
+              `Block ${user.name}?`,
+              `You won't see ${user.name} in your nearby feed or messages, and they won't see you. This can be undone later.`,
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Block',
+                  style: 'destructive',
+                  onPress: () => {
+                    // Optimistic close — block in background. On success,
+                    // emit so dependent screens (ThreadsList, Home) refetch.
+                    navigation.goBack();
+                    blockUser(user.id)
+                      .then(() => DeviceEventEmitter.emit('blockChanged'))
+                      .catch((e) => {
+                        Alert.alert(
+                          'Block failed',
+                          e instanceof Error ? e.message : 'Try again.',
+                        );
+                      });
+                  },
                 },
-              },
-            ],
-          );
-        }}
-        style={({ pressed }) => [
-          styles.blockBtn,
-          pressed && { opacity: 0.6 },
-        ]}
-      >
-        <Text style={styles.blockLabel}>Block {user.name}</Text>
-      </Pressable>
+              ],
+            );
+          }}
+          style={({ pressed }) => [styles.safetyItem, pressed && { opacity: 0.5 }]}
+        >
+          <Ionicons name="ban-outline" size={15} color={colors.textMuted} />
+          <Text style={styles.safetyText}>Block</Text>
+        </Pressable>
+      </View>
 
       </ScrollView>
 
@@ -332,21 +334,28 @@ const styles = StyleSheet.create({
   messageBtnPressed: { backgroundColor: colors.primaryDim },
   actionLabel: { fontSize: 16, fontWeight: '600' },
   errorText: { ...typography.caption, color: colors.primary, textAlign: 'center' },
-  secondaryAction: {
-    alignSelf: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    marginTop: spacing.md,
+  safetyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+    marginTop: spacing.sm,
   },
-  secondaryActionLabel: {
+  safetyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+  },
+  safetyText: {
     ...typography.caption,
     color: colors.textMuted,
-    textDecorationLine: 'underline',
+    fontWeight: '500',
   },
-  blockBtn: {
-    alignSelf: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+  safetyDivider: {
+    width: 1,
+    height: 14,
+    backgroundColor: colors.border,
   },
-  blockLabel: { ...typography.caption, color: colors.textMuted, textDecorationLine: 'underline' },
 });
