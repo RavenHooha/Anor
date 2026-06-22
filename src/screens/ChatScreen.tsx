@@ -7,8 +7,6 @@ import {
   Pressable,
   StyleSheet,
   FlatList,
-  KeyboardAvoidingView,
-  Platform,
   Alert,
   DeviceEventEmitter,
 } from 'react-native';
@@ -33,6 +31,8 @@ import { subscribeToThreadMessages } from '../storage/realtime';
 import MessageComposerModal from '../components/MessageComposerModal';
 import { getMyProfile } from '../storage/profile';
 import { supabase } from '../lib/supabase';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { useHeaderHeight } from '@react-navigation/elements';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -51,6 +51,7 @@ export default function ChatScreen({ route, navigation }: Props) {
   const [openerComposerOpen, setOpenerComposerOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const listRef = useRef<FlatList<Message>>(null);
+  const headerHeight = useHeaderHeight();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setMeId(data.user?.id ?? null));
@@ -174,7 +175,8 @@ export default function ChatScreen({ route, navigation }: Props) {
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
+        keyboardVerticalOffset={headerHeight}
       >
         <FlatList
         ref={listRef}

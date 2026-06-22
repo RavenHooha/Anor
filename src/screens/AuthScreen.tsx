@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
 import { sendMagicLink } from '../auth/deepLink';
+import { signInWithGoogle, GOOGLE_AUTH_AVAILABLE } from '../auth/google';
 import { supabase } from '../lib/supabase';
 
 type Phase = 'idle' | 'sending' | 'sent' | 'error';
@@ -57,6 +58,21 @@ export default function AuthScreen() {
     } catch (e) {
       setPhase('error');
       setError(e instanceof Error ? e.message : 'Could not send link.');
+    }
+  };
+
+  const onGoogle = async () => {
+    if (phase === 'sending') return;
+    setPhase('sending');
+    setError(null);
+    try {
+      const ok = await signInWithGoogle();
+      // On success the auth listener swaps this screen out; if the user
+      // backed out of the picker, just return to idle.
+      if (!ok) setPhase('idle');
+    } catch (e) {
+      setPhase('error');
+      setError(e instanceof Error ? e.message : 'Google sign-in failed.');
     }
   };
 
@@ -130,6 +146,31 @@ export default function AuthScreen() {
             </View>
           ) : (
             <View style={styles.form}>
+              {GOOGLE_AUTH_AVAILABLE && (
+                <>
+                  <Pressable
+                    onPress={onGoogle}
+                    disabled={phase === 'sending'}
+                    style={({ pressed }) => [
+                      styles.googleBtn,
+                      pressed && { opacity: 0.7 },
+                      phase === 'sending' && { opacity: 0.6 },
+                    ]}
+                  >
+                    <Ionicons
+                      name="logo-google"
+                      size={18}
+                      color={colors.textPrimary}
+                    />
+                    <Text style={styles.googleLabel}>Continue with Google</Text>
+                  </Pressable>
+                  <View style={styles.divider}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>or</Text>
+                    <View style={styles.dividerLine} />
+                  </View>
+                </>
+              )}
               <TextInput
                 value={email}
                 onChangeText={setEmail}
@@ -243,6 +284,26 @@ const styles = StyleSheet.create({
   },
   spacer: { flex: 1, minHeight: spacing.md },
   form: { gap: spacing.sm },
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: spacing.md,
+    borderRadius: radius.pill,
+  },
+  googleLabel: { color: colors.textPrimary, fontSize: 16, fontWeight: '600' },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginVertical: 2,
+  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: { ...typography.caption, color: colors.textMuted },
   input: {
     backgroundColor: colors.surface,
     borderWidth: 1,

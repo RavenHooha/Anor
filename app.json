@@ -45,7 +45,10 @@
               "pathPrefix": "/auth-callback"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
       "permissions": [
@@ -93,7 +96,8 @@
         }
       ],
       "@sentry/react-native",
-      "expo-font"
+      "expo-font",
+      "@react-native-google-signin/google-signin"
     ],
     "extra": {
       "eas": {

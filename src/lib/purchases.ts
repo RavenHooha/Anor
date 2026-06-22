@@ -42,6 +42,9 @@ export async function identifyPurchases(userId: string): Promise<void> {
 export async function resetPurchases(): Promise<void> {
   if (!configured) return;
   try {
+    // logOut() errors (and logs to console) if the user is already anonymous —
+    // skip it in that case so we don't spam a harmless RevenueCat warning.
+    if (await Purchases.isAnonymous()) return;
     await Purchases.logOut();
   } catch {
     // ignore

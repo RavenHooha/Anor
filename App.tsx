@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import * as Sentry from '@sentry/react-native';
 import * as Updates from 'expo-updates';
 import RootNavigator, { navigationRef } from './src/navigation/RootNavigator';
@@ -148,17 +149,19 @@ function App() {
 
   return (
     <SafeAreaProvider style={{ flex: 1, backgroundColor: colors.background }}>
-      <StatusBar style="light" />
-      {ready ? (
-        <ProfileGateProvider value={gate}>
-          <RootNavigator
-            isAuthed={!!session}
-            hasProfile={!!session && hasProfile === true}
-          />
-        </ProfileGateProvider>
-      ) : (
-        <View style={{ flex: 1, backgroundColor: colors.background }} />
-      )}
+      <KeyboardProvider>
+        <StatusBar style="light" />
+        {ready ? (
+          <ProfileGateProvider value={gate}>
+            <RootNavigator
+              isAuthed={!!session}
+              hasProfile={!!session && hasProfile === true}
+            />
+          </ProfileGateProvider>
+        ) : (
+          <View style={{ flex: 1, backgroundColor: colors.background }} />
+        )}
+      </KeyboardProvider>
     </SafeAreaProvider>
   );
 }
