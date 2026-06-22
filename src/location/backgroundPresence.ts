@@ -15,6 +15,26 @@ import { colors } from '../theme';
 
 export const BG_PRESENCE_TASK = 'anor-bg-presence';
 const BREADCRUMB_KEY = 'anor.bgPresence.lastRun';
+const DISCOVERABLE_PREF_KEY = 'anor.discoverable.pref';
+
+// The user's *intent* — separate from whether the OS task is currently alive.
+// The toggle reflects this so it survives navigation and app restarts; the
+// breadcrumb reflects the separate truth of whether the task is actually firing.
+export async function getDiscoverablePref(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(DISCOVERABLE_PREF_KEY)) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export async function setDiscoverablePref(on: boolean): Promise<void> {
+  try {
+    await AsyncStorage.setItem(DISCOVERABLE_PREF_KEY, on ? '1' : '0');
+  } catch {
+    // best-effort
+  }
+}
 
 export type BgBreadcrumb = {
   at: string; // ISO timestamp
@@ -146,11 +166,23 @@ export async function isBackgroundPresenceRunning(): Promise<boolean> {
  * location updates that drive the task. Returns an error string on failure.
  */
 export async function startBackgroundPresence(): Promise<string | null> {
-  const fg = await Location.requestForegroundPermissionsAsync();
+  // Check the current grant before re-requesting. On Android the background
+  // request bounces the user out to system Settings and resolves as "denied"
+  // before they pick "Allow all the time" — so a fresh request right after
+  // granting reads stale. getXPermissions reads the real current state.
+  let fg = await Location.getForegroundPermissionsAsync();
+  if (fg.status !== 'granted') {
+    fg = await Location.requestForegroundPermissionsAsync();
+  }
   if (fg.status !== 'granted') return 'foreground location denied';
 
-  const bg = await Location.requestBackgroundPermissionsAsync();
-  if (bg.status !== 'granted') return 'background location denied';
+  let bg = await Location.getBackgroundPermissionsAsync();
+  if (bg.status !== 'granted') {
+    bg = await Location.requestBackgroundPermissionsAsync();
+  }
+  if (bg.status !== 'granted') {
+    return 'set Location to "Allow all the time" in system settings, then flip this again';
+  }
 
   if (await isBackgroundPresenceRunning()) return null;
 

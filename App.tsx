@@ -26,6 +26,10 @@ import {
 } from './src/lib/analytics';
 import { colors } from './src/theme';
 import UpdateOverlay from './src/components/UpdateOverlay';
+import {
+  getDiscoverablePref,
+  startBackgroundPresence,
+} from './src/location/backgroundPresence';
 
 // Crash reporting. Privacy notes:
 // - sendDefaultPii: false → no IP, no cookies, no auto-captured user info
@@ -112,6 +116,16 @@ function App() {
   // Register push token once we know who the user is.
   useEffect(() => {
     if (session) setupPushNotifications().catch(() => {});
+  }, [session]);
+
+  // If the user opted into Discoverable, make sure the background presence task
+  // is running after a cold launch — Android can kill the foreground service,
+  // and we want the opt-in to be sticky. No-ops if permission was revoked.
+  useEffect(() => {
+    if (!session) return;
+    getDiscoverablePref().then((on) => {
+      if (on) startBackgroundPresence().catch(() => {});
+    });
   }, [session]);
 
   // Tap on a notification → navigate to the relevant Chat thread.

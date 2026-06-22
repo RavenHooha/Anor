@@ -29,8 +29,9 @@ import { TOS_URL, PRIVACY_POLICY_URL, supportMailto } from '../lib/links';
 import {
   startBackgroundPresence,
   stopBackgroundPresence,
-  isBackgroundPresenceRunning,
   getBgBreadcrumb,
+  getDiscoverablePref,
+  setDiscoverablePref,
   type BgBreadcrumb,
 } from '../location/backgroundPresence';
 import type { RootStackParamList } from '../navigation/types';
@@ -51,7 +52,7 @@ export default function SettingsScreen() {
   useFocusEffect(
     useCallback(() => {
       getMyProfile().then(setProfile);
-      isBackgroundPresenceRunning().then(setDiscoverable);
+      getDiscoverablePref().then(setDiscoverable);
       getBgBreadcrumb().then(setCrumb);
     }, []),
   );
@@ -60,11 +61,13 @@ export default function SettingsScreen() {
     if (savingDiscoverable) return;
     setSavingDiscoverable(true);
     setDiscoverable(next);
+    await setDiscoverablePref(next);
     try {
       if (next) {
         const err = await startBackgroundPresence();
         if (err) {
           setDiscoverable(false);
+          await setDiscoverablePref(false);
           Alert.alert('Could not turn on', err);
         }
       } else {
@@ -72,6 +75,7 @@ export default function SettingsScreen() {
       }
     } catch (e) {
       setDiscoverable(!next);
+      await setDiscoverablePref(!next);
       Alert.alert('Could not save', e instanceof Error ? e.message : 'Try again.');
     } finally {
       setSavingDiscoverable(false);
