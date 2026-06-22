@@ -185,9 +185,20 @@ TaskManager.defineTask(BG_PRESENCE_TASK, async ({ data, error }) => {
  */
 export async function foregroundCheckin(): Promise<BgBreadcrumb | null> {
   try {
-    const pos = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
-    });
+    // Fast path: a recent cached fix. getCurrentPositionAsync can hang for a
+    // long time indoors waiting on a fresh GPS lock, so prefer last-known and
+    // only fall back to a live fix with a hard timeout.
+    let pos = await Location.getLastKnownPositionAsync({ maxAge: 180_000 });
+    if (!pos) {
+      pos = await Promise.race([
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 8_000)),
+      ]);
+    }
+    if (!pos) {
+      await writeBreadcrumb(false, 'check now: no location fix (timed out)');
+      return readBreadcrumb();
+    }
     await runCheckin({
       lat: pos.coords.latitude,
       lng: pos.coords.longitude,
