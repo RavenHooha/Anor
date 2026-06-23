@@ -16,6 +16,7 @@ export type Profile = {
   age: number | null;
   hideMessagePreview: boolean;
   analyticsOptedIn: boolean;
+  isMaker: boolean;
   createdAt: string | null;
 };
 
@@ -28,7 +29,7 @@ export async function getMyProfile(): Promise<Profile | null> {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, name, photo_url, photos, bio, interests, connect_prefs, age, hide_message_preview, analytics_opted_in, created_at')
+    .select('id, name, photo_url, photos, bio, interests, connect_prefs, age, hide_message_preview, analytics_opted_in, is_maker, created_at')
     .eq('id', userId)
     .maybeSingle();
 
@@ -44,6 +45,7 @@ export async function getMyProfile(): Promise<Profile | null> {
     age: typeof data.age === 'number' ? data.age : null,
     hideMessagePreview: data.hide_message_preview === true,
     analyticsOptedIn: data.analytics_opted_in === true,
+    isMaker: data.is_maker === true,
     createdAt: data.created_at ?? null,
   };
 }
@@ -193,7 +195,7 @@ export async function upsertMyProfile(input: {
   const { data, error } = await supabase
     .from('profiles')
     .upsert(row, { onConflict: 'id' })
-    .select('id, name, photo_url, photos, bio, interests, connect_prefs, age, hide_message_preview, analytics_opted_in, created_at')
+    .select('id, name, photo_url, photos, bio, interests, connect_prefs, age, hide_message_preview, analytics_opted_in, is_maker, created_at')
     .single();
 
   if (error) throw error;
@@ -208,6 +210,7 @@ export async function upsertMyProfile(input: {
     age: typeof data.age === 'number' ? data.age : null,
     hideMessagePreview: data.hide_message_preview === true,
     analyticsOptedIn: data.analytics_opted_in === true,
+    isMaker: data.is_maker === true,
     createdAt: data.created_at ?? null,
   };
 }

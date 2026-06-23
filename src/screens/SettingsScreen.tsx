@@ -217,6 +217,21 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {profile?.isMaker && (
+          <>
+            <Text style={styles.sectionLabel}>Maker</Text>
+            <Pressable
+              onPress={() => navigation.navigate('Maker')}
+              accessibilityRole="button"
+              accessibilityLabel="Message anyone as the maker"
+              style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.6 }]}
+            >
+              <Text style={styles.linkLabel}>Message anyone</Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+            </Pressable>
+          </>
+        )}
+
         <Text style={styles.sectionLabel}>Discoverable (beta)</Text>
 
         <View style={styles.toggleRow}>
