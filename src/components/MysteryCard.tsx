@@ -22,14 +22,14 @@ export default function MysteryCard({ signal }: Props) {
       </View>
       <View style={styles.body}>
         <Text style={styles.name} numberOfLines={1}>
-          Anor nearby
+          Looking right now
         </Text>
         <View style={styles.statusRow}>
           <Ionicons name="radio-outline" size={14} color={colors.highlight} />
           <Text style={styles.statusLabel}>{SIGNAL_LABEL[signal]}</Text>
         </View>
         <Text style={styles.hint} numberOfLines={2}>
-          Profile loads when they sign in.
+          Someone with Anor open nearby. Profile loads when they connect.
         </Text>
       </View>
     </View>
