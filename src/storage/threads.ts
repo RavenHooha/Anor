@@ -37,6 +37,7 @@ export type ThreadDetail = {
   otherId: string;
   otherName: string;
   otherPhotoUrl: string | null;
+  otherIsMaker: boolean;
 };
 
 export async function createOrGetThread(
@@ -142,6 +143,7 @@ export async function getThread(threadId: string): Promise<ThreadDetail | null> 
     otherId,
     otherName: profile?.name ?? 'Unknown',
     otherPhotoUrl: profile?.photo_url ?? null,
+    otherIsMaker: profile?.is_maker === true,
   };
 }
 

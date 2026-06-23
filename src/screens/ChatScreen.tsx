@@ -128,7 +128,19 @@ export default function ChatScreen({ route, navigation }: Props) {
       ]);
     };
     navigation.setOptions({
-      headerTitle: otherName,
+      headerTitle: () => (
+        <View style={styles.headerTitleRow}>
+          <Text style={styles.headerTitleText} numberOfLines={1}>
+            {otherName}
+          </Text>
+          {thread.otherIsMaker && (
+            <View style={styles.makerBadge}>
+              <Ionicons name="shield-checkmark" size={12} color={colors.background} />
+              <Text style={styles.makerBadgeText}>maker</Text>
+            </View>
+          )}
+        </View>
+      ),
       headerRight: () => (
         <Pressable
           onPress={openMenu}
@@ -373,6 +385,35 @@ function MessageBubble({
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    maxWidth: 240,
+  },
+  headerTitleText: {
+    ...typography.body,
+    color: colors.textPrimary,
+    fontWeight: '600',
+    fontSize: 17,
+    flexShrink: 1,
+  },
+  makerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+  },
+  makerBadgeText: {
+    color: colors.background,
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
   list: {
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,

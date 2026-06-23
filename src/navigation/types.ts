@@ -19,4 +19,5 @@ export type RootStackParamList = {
   Settings: undefined;
   Customize: undefined;
   Paywall: undefined;
+  Maker: undefined;
 };

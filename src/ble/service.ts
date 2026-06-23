@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import type { EventSubscription } from 'react-native';
-import BleManager from 'react-native-ble-manager';
+import BleManager, { BleState } from 'react-native-ble-manager';
 import BLEAdvertiser from 'react-native-ble-advertiser';
 import * as Sentry from '@sentry/react-native';
 import { track } from '../lib/analytics';
@@ -141,4 +141,38 @@ export function subscribeNearby(
   return () => {
     listeners.delete(listener);
   };
+}
+
+/**
+ * Prompt the user to turn Bluetooth on (Android shows the system enable dialog).
+ * No-op on other platforms. If declined, the state observer keeps watching, so
+ * enabling it manually later still resumes scanning.
+ */
+export async function enableBluetooth(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  try {
+    await BleManager.enableBluetooth();
+  } catch {
+    // User declined or the OS rejected — nothing to do; observer handles resume.
+  }
+}
+
+/**
+ * Observe the Bluetooth adapter state (Android only). Calls back immediately
+ * with the current state and again on every toggle. Without this, scanning
+ * silently does nothing when Bluetooth is off — the app reports 'scanning'
+ * while the feed stays permanently empty with no prompt to fix it.
+ */
+export function observeBleState(cb: (on: boolean) => void): () => void {
+  if (Platform.OS !== 'android') return () => {};
+  const sub = BleManager.onDidUpdateState((event) => {
+    cb(event.state === BleState.On);
+  });
+  // Ensure the manager is started (idempotent) so state events flow, then force
+  // an initial emission — checkState() also triggers onDidUpdateState.
+  BleManager.start({ showAlert: false })
+    .then(() => BleManager.checkState())
+    .then((state) => cb(state === BleState.On))
+    .catch(() => {});
+  return () => sub.remove();
 }
