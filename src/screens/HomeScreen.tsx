@@ -28,6 +28,7 @@ import { getMyVenue } from '../data/venue';
 import { setNearbyAlert, clearNearbyAlert, getNearbyAlert } from '../data/alerts';
 import { createOrGetThread, listMyThreads } from '../storage/threads';
 import { useBleNearby } from '../ble/useBleNearby';
+import { enableBluetooth } from '../ble/service';
 import { useLocation } from '../location/useLocation';
 import { reverseGeocodeArea, type AreaNames } from '../location/location';
 import type { Status } from '../types/status';
@@ -399,17 +400,25 @@ function BleBanner({
       ? 'Bluetooth permission denied. Tap to retry.'
       : status === 'unsupported'
         ? 'Bluetooth proximity is unavailable on this device.'
-        : "Couldn't start Bluetooth. Tap to retry.";
+        : status === 'bluetoothOff'
+          ? 'Bluetooth is off. Tap to turn it on and find people nearby.'
+          : "Couldn't start Bluetooth. Tap to retry.";
 
-  const tappable = status === 'denied' || status === 'error';
+  const onPress =
+    status === 'bluetoothOff'
+      ? () => {
+          enableBluetooth();
+        }
+      : status === 'denied' || status === 'error'
+        ? onRetry
+        : undefined;
 
   return (
     <Pressable
-      onPress={tappable ? onRetry : undefined}
-      style={({ pressed }) => [
-        styles.banner,
-        pressed && tappable && { opacity: 0.7 },
-      ]}
+      onPress={onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={message}
+      style={({ pressed }) => [styles.banner, pressed && onPress && { opacity: 0.7 }]}
     >
       <Text style={styles.bannerText}>{message}</Text>
     </Pressable>

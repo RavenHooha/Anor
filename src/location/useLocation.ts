@@ -7,6 +7,7 @@ import {
   type LocationCoords,
   type LocationPermissionResult,
 } from './location';
+import { reportError } from '../lib/report';
 
 export type LocationStatus =
   | 'idle'
@@ -48,7 +49,15 @@ export function useLocation(): {
     try {
       const unsub = await watchLocation((c) => {
         setCoords(c);
-        pushPresenceLocation(c).catch(() => {});
+        pushPresenceLocation(c).catch((e) =>
+          reportError('foreground presence push failed', {
+            area: 'presence',
+            op: 'fg_push',
+            reason: 'push',
+            event: 'presence_checkin_failed',
+            cause: e,
+          }),
+        );
       });
       unsubRef.current = unsub;
       setStatus('tracking');

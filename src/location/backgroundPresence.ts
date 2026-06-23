@@ -4,6 +4,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
+import { reportError, reportEvent } from '../lib/report';
 import { colors } from '../theme';
 
 // ---------------------------------------------------------------------------
@@ -225,12 +226,28 @@ async function runCheckin(
   const auth = await ensureAuthedUserId();
   if (!auth.id) {
     await writeBreadcrumb(false, `auth: ${auth.reason}`, source);
+    // "no stored session" is the expected signed-out case — not worth remote
+    // noise. Anything else (getSession/refresh failure) is a real problem.
+    if (auth.reason !== 'no stored session') {
+      reportError(`presence auth failed: ${auth.reason}`, {
+        area: 'presence',
+        op: 'checkin',
+        reason: 'auth',
+        event: 'presence_checkin_failed',
+      });
+    }
     return;
   }
 
   const result = await checkinPresence(coords);
   if ('error' in result) {
     await writeBreadcrumb(false, `checkin: ${result.error}`, source);
+    reportError(`presence_checkin RPC failed: ${result.error}`, {
+      area: 'presence',
+      op: 'checkin',
+      reason: 'rpc',
+      event: 'presence_checkin_failed',
+    });
     return;
   }
 
@@ -257,8 +274,18 @@ async function runCheckin(
 
 // Must be defined in module/global scope so the OS can invoke it on cold start.
 TaskManager.defineTask(BG_PRESENCE_TASK, async ({ data, error }) => {
+  // Count every OS invocation — this is the denominator that tells us whether
+  // Android OEMs are killing the foreground service (no events = task starved).
+  reportEvent('presence_bg_fired');
+
   if (error) {
     await writeBreadcrumb(false, `task error: ${error.message}`, 'bg');
+    reportError(`bg presence task error: ${error.message}`, {
+      area: 'presence',
+      op: 'bg_task',
+      reason: 'task_error',
+      event: 'presence_checkin_failed',
+    });
     return;
   }
 
@@ -266,6 +293,12 @@ TaskManager.defineTask(BG_PRESENCE_TASK, async ({ data, error }) => {
   const pos = locations?.[locations.length - 1];
   if (!pos) {
     await writeBreadcrumb(false, 'task fired with no location', 'bg');
+    reportError('bg presence task fired with no location', {
+      area: 'presence',
+      op: 'bg_task',
+      reason: 'no_location',
+      event: 'presence_checkin_failed',
+    });
     return;
   }
 
@@ -299,6 +332,12 @@ export async function foregroundCheckin(): Promise<BgBreadcrumb | null> {
     }
     if (!pos) {
       await writeBreadcrumb(false, 'check now: no location fix (timed out)', 'fg');
+      reportError('foreground check-in: no location fix (timed out)', {
+        area: 'presence',
+        op: 'fg_checkin',
+        reason: 'no_fix',
+        event: 'presence_checkin_failed',
+      });
       return readBreadcrumb();
     }
     await runCheckin(
@@ -315,6 +354,13 @@ export async function foregroundCheckin(): Promise<BgBreadcrumb | null> {
       `check now: ${e instanceof Error ? e.message : 'failed'}`,
       'fg',
     );
+    reportError('foreground check-in threw', {
+      area: 'presence',
+      op: 'fg_checkin',
+      reason: 'exception',
+      event: 'presence_checkin_failed',
+      cause: e,
+    });
   }
   return readBreadcrumb();
 }
