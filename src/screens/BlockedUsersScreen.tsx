@@ -1,13 +1,12 @@
 import { useCallback, useState } from 'react';
 import {
   View,
-  Text,
-  Image,
-  Pressable,
+  Text,  Pressable,
   StyleSheet,
   FlatList,
   RefreshControl,
 } from 'react-native';
+import Avatar from '../components/Avatar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, spacing, radius, typography } from '../theme';
@@ -62,11 +61,7 @@ export default function BlockedUsersScreen() {
         renderItem={({ item }) => (
           <View style={styles.row}>
             <View style={styles.avatarFrame}>
-              {item.photoUrl ? (
-                <Image source={{ uri: item.photoUrl }} style={styles.avatar} />
-              ) : (
-                <View style={[styles.avatar, { backgroundColor: colors.surfaceElevated }]} />
-              )}
+              <Avatar uri={item.photoUrl} name={item.name} size={44} style={styles.avatar} />
             </View>
             <Text style={styles.name} numberOfLines={1}>
               {item.name}

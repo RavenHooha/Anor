@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { currentUserId } from '../lib/session';
 
 export const VENUE_MAX_LENGTH = 60;
 
@@ -15,8 +16,7 @@ export async function clearVenue(): Promise<void> {
 }
 
 export async function getMyVenue(): Promise<string | null> {
-  const { data: userData } = await supabase.auth.getUser();
-  const uid = userData.user?.id;
+  const uid = await currentUserId();
   if (!uid) return null;
   const { data, error } = await supabase
     .from('presence')

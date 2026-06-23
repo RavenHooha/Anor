@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
-  Image,
   TextInput,
   Pressable,
   StyleSheet,
@@ -15,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import Avatar from '../components/Avatar';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, spacing, radius, typography } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
@@ -23,11 +23,6 @@ import { listUsersAsMaker, startMakerThread, type MakerUser } from '../storage/m
 type Props = NativeStackScreenProps<RootStackParamList, 'Maker'>;
 
 const BODY_LIMIT = 500;
-
-function initial(name: string): string {
-  const c = name.trim().charAt(0);
-  return c ? c.toUpperCase() : '?';
-}
 
 export default function MakerScreen({ navigation }: Props) {
   const [users, setUsers] = useState<MakerUser[]>([]);
@@ -88,13 +83,7 @@ export default function MakerScreen({ navigation }: Props) {
       accessibilityLabel={`Message ${item.name}${item.hasThread ? ', already in your messages' : ''}`}
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
     >
-      {item.photoUrl ? (
-        <Image source={{ uri: item.photoUrl }} style={styles.avatar} />
-      ) : (
-        <View style={[styles.avatar, styles.avatarEmpty]}>
-          <Text style={styles.avatarInitial}>{initial(item.name)}</Text>
-        </View>
-      )}
+      <Avatar uri={item.photoUrl} name={item.name} size={44} borderRadius={22} style={styles.avatar} />
       <View style={styles.rowText}>
         <Text style={styles.name} numberOfLines={1}>
           {item.name || 'Unnamed'}

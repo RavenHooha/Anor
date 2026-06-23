@@ -1,5 +1,6 @@
 import * as Location from 'expo-location';
 import { supabase } from '../lib/supabase';
+import { currentUserId } from '../lib/session';
 
 export type LocationCoords = {
   lat: number;
@@ -77,8 +78,7 @@ export async function reverseGeocodeArea(coords: LocationCoords): Promise<AreaNa
 }
 
 export async function pushPresenceLocation(coords: LocationCoords): Promise<void> {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
+  const userId = await currentUserId();
   if (!userId) return;
 
   const wkt = `POINT(${coords.lng} ${coords.lat})`;

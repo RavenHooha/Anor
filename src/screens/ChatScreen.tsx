@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
-  Text,
-  Image,
-  TextInput,
+  Text,  TextInput,
   Pressable,
   StyleSheet,
   FlatList,
@@ -12,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import Avatar from '../components/Avatar';
 import { blockUser } from '../storage/blocks';
 import { track } from '../lib/analytics';
 import ReportUserModal from '../components/ReportUserModal';
@@ -31,7 +30,7 @@ import {
 import { subscribeToThreadMessages } from '../storage/realtime';
 import MessageComposerModal from '../components/MessageComposerModal';
 import { getMyProfile } from '../storage/profile';
-import { supabase } from '../lib/supabase';
+import { currentUserId } from '../lib/session';
 import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -63,7 +62,7 @@ export default function ChatScreen({ route, navigation }: Props) {
   }), [insets.bottom]);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setMeId(data.user?.id ?? null));
+    currentUserId().then(setMeId);
     getMyProfile().then((p) => {
       setMyPhotoUrl(p?.photoUrl ?? p?.photos[0] ?? null);
       setMyName(p?.name ?? '');
@@ -324,11 +323,7 @@ function OpenerHeader({ thread, meId }: { thread: ThreadDetail; meId: string }) 
   return (
     <View style={styles.headerBlock}>
       <View style={styles.avatarFrame}>
-        {thread.otherPhotoUrl ? (
-          <Image source={{ uri: thread.otherPhotoUrl }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, { backgroundColor: colors.surfaceElevated }]} />
-        )}
+        <Avatar uri={thread.otherPhotoUrl} name={thread.otherName} size={80} style={styles.avatar} />
       </View>
       <Text style={styles.headerName}>{thread.otherName}</Text>
       {wave ? (
@@ -358,14 +353,9 @@ function MessageBubble({
   photoUrl: string | null;
   name: string;
 }) {
-  const initial = (name || '?').trim().charAt(0).toUpperCase() || '?';
   const avatar = (
     <View style={styles.bubbleAvatar}>
-      {photoUrl ? (
-        <Image source={{ uri: photoUrl }} style={styles.bubbleAvatarImage} />
-      ) : (
-        <Text style={styles.bubbleAvatarInitial}>{initial}</Text>
-      )}
+      <Avatar uri={photoUrl} name={name} size={28} style={styles.bubbleAvatarImage} />
     </View>
   );
 

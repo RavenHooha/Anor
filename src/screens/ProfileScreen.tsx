@@ -1,13 +1,12 @@
 import { useCallback, useState } from 'react';
 import {
   View,
-  Text,
-  Image,
-  Pressable,
+  Text,  Pressable,
   StyleSheet,
   ScrollView,
   Share,
 } from 'react-native';
+import Avatar from '../components/Avatar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -100,11 +99,7 @@ export default function ProfileScreen() {
           ]}
         >
           <View style={styles.avatarFrame}>
-            {profile?.photoUrl ? (
-              <Image source={{ uri: profile.photoUrl }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatarEmpty} />
-            )}
+            <Avatar uri={profile?.photoUrl} name={profile?.name} size={140} style={styles.avatar} />
             <View style={styles.avatarEditIcon}>
               <Ionicons name="pencil" size={14} color={colors.background} />
             </View>

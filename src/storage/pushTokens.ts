@@ -1,9 +1,9 @@
 import { Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { currentUserId } from '../lib/session';
 
 export async function registerPushToken(token: string): Promise<void> {
-  const { data: userData } = await supabase.auth.getUser();
-  const me = userData.user?.id;
+  const me = await currentUserId();
   if (!me) return;
 
   const { error } = await supabase
@@ -25,8 +25,7 @@ export async function registerPushToken(token: string): Promise<void> {
 }
 
 export async function unregisterPushToken(token: string): Promise<void> {
-  const { data: userData } = await supabase.auth.getUser();
-  const me = userData.user?.id;
+  const me = await currentUserId();
   if (!me) return;
 
   await supabase

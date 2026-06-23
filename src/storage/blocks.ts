@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { requireUserId } from '../lib/session';
 
 export type BlockedUser = {
   userId: string;
@@ -25,9 +26,7 @@ export async function listMyBlocks(): Promise<BlockedUser[]> {
 }
 
 export async function blockUser(otherId: string): Promise<void> {
-  const { data: userData } = await supabase.auth.getUser();
-  const me = userData.user?.id;
-  if (!me) throw new Error('Not authenticated');
+  const me = await requireUserId();
   if (me === otherId) throw new Error('Cannot block yourself');
 
   const { error } = await supabase
@@ -38,9 +37,7 @@ export async function blockUser(otherId: string): Promise<void> {
 }
 
 export async function unblockUser(otherId: string): Promise<void> {
-  const { data: userData } = await supabase.auth.getUser();
-  const me = userData.user?.id;
-  if (!me) throw new Error('Not authenticated');
+  const me = await requireUserId();
 
   const { error } = await supabase
     .from('blocks')

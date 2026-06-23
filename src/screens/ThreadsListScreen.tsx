@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   View,
-  Text,
-  Image,
-  Pressable,
+  Text,  Pressable,
   StyleSheet,
   FlatList,
   RefreshControl,
@@ -17,7 +15,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, spacing, radius, typography } from '../theme';
 import { listMyThreads, hideThread, type ThreadSummary } from '../storage/threads';
 import { subscribeToMyThreadChanges } from '../storage/realtime';
-import { supabase } from '../lib/supabase';
+import { currentUserId } from '../lib/session';
+import Avatar from '../components/Avatar';
 import type { RootStackParamList } from '../navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -30,7 +29,7 @@ export default function ThreadsListScreen() {
   const navigation = useNavigation<Nav>();
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setMeId(data.user?.id ?? null));
+    currentUserId().then(setMeId);
   }, []);
 
   const load = useCallback(async () => {
@@ -176,11 +175,7 @@ function ThreadRow({
       style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}
     >
       <View style={styles.avatarFrame}>
-        {item.otherPhotoUrl ? (
-          <Image source={{ uri: item.otherPhotoUrl }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, { backgroundColor: colors.surfaceElevated }]} />
-        )}
+        <Avatar uri={item.otherPhotoUrl} name={item.otherName} size={52} style={styles.avatar} />
       </View>
       <View style={styles.rowBody}>
         <View style={styles.rowHeader}>
