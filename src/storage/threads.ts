@@ -15,6 +15,7 @@ export type ThreadSummary = {
   messageCount: number;
   lastMessageBody: string | null;
   lastMessageFrom: string | null;
+  unread: boolean;
 };
 
 export type Message = {
@@ -96,7 +97,16 @@ export async function listMyThreads(): Promise<ThreadSummary[]> {
     messageCount: r.message_count,
     lastMessageBody: r.last_message_body,
     lastMessageFrom: r.last_message_from,
+    unread: r.unread === true,
   }));
+}
+
+/** Mark a thread read up to now (clears its unread state for me). */
+export async function markThreadRead(threadId: string): Promise<void> {
+  const { error } = await supabase.rpc('mark_thread_read', {
+    p_thread_id: threadId,
+  });
+  if (error) throw error;
 }
 
 export async function getThread(threadId: string): Promise<ThreadDetail | null> {
@@ -191,4 +201,5 @@ type RpcRow = {
   message_count: number;
   last_message_body: string | null;
   last_message_from: string | null;
+  unread: boolean;
 };

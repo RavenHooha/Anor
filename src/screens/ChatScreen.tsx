@@ -22,6 +22,7 @@ import {
   getThread,
   listMessages,
   sendMessage,
+  markThreadRead,
   type Message,
   type ThreadDetail,
   MESSAGE_CAP,
@@ -77,6 +78,8 @@ export default function ChatScreen({ route, navigation }: Props) {
   useEffect(() => {
     refreshThread();
     listMessages(threadId).then(setMessages);
+    // Opening the thread marks it read.
+    markThreadRead(threadId).catch(() => {});
     return subscribeToThreadMessages(threadId, (incoming) => {
       setMessages((prev) => {
         if (prev.some((m) => m.id === incoming.id)) return prev;
@@ -84,6 +87,8 @@ export default function ChatScreen({ route, navigation }: Props) {
       });
       // The first response from the recipient accepts the thread; refresh detail.
       refreshThread();
+      // We're looking at it — keep it marked read as messages arrive live.
+      markThreadRead(threadId).catch(() => {});
     });
   }, [threadId, refreshThread]);
 

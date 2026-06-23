@@ -184,7 +184,10 @@ function ThreadRow({
       </View>
       <View style={styles.rowBody}>
         <View style={styles.rowHeader}>
-          <Text style={styles.rowName} numberOfLines={1}>
+          <Text
+            style={[styles.rowName, item.unread && styles.rowNameUnread]}
+            numberOfLines={1}
+          >
             {item.otherName}
           </Text>
           {badge && (
@@ -195,11 +198,18 @@ function ThreadRow({
             </View>
           )}
         </View>
-        <Text style={styles.rowPreview} numberOfLines={1}>
+        <Text
+          style={[styles.rowPreview, item.unread && styles.rowPreviewUnread]}
+          numberOfLines={1}
+        >
           {preview}
         </Text>
       </View>
-      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+      {item.unread ? (
+        <View style={styles.unreadDot} />
+      ) : (
+        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+      )}
     </Pressable>
   );
 }
@@ -241,7 +251,15 @@ const styles = StyleSheet.create({
   rowBody: { flex: 1, gap: 2 },
   rowHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   rowName: { ...typography.title, fontSize: 16, flex: 1 },
+  rowNameUnread: { color: colors.textPrimary },
   rowPreview: { ...typography.caption, color: colors.textSecondary },
+  rowPreviewUnread: { color: colors.textPrimary, fontWeight: '600' },
+  unreadDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.primary,
+  },
   badge: {
     borderWidth: 1,
     borderRadius: radius.pill,

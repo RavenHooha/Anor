@@ -27,7 +27,6 @@ import { fetchNearbyVenues, type NearbyVenue } from '../data/venues';
 import { getMyVenue } from '../data/venue';
 import { setNearbyAlert, clearNearbyAlert, getNearbyAlert } from '../data/alerts';
 import { createOrGetThread, listMyThreads } from '../storage/threads';
-import { supabase } from '../lib/supabase';
 import { useBleNearby } from '../ble/useBleNearby';
 import { useLocation } from '../location/useLocation';
 import { reverseGeocodeArea, type AreaNames } from '../location/location';
@@ -47,7 +46,6 @@ export default function HomeScreen() {
   const [checkedInVenue, setCheckedInVenue] = useState<string | null>(null);
   const [alertActive, setAlertActive] = useState(false);
   const [savingAlert, setSavingAlert] = useState(false);
-  const [meId, setMeId] = useState<string | null>(null);
   const [hasUnread, setHasUnread] = useState(false);
   const [venues, setVenues] = useState<NearbyVenue[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -64,21 +62,17 @@ export default function HomeScreen() {
       setStatusLoaded(true);
     });
     loadRadius().then(setRadiusM);
-    supabase.auth.getUser().then(({ data }) => setMeId(data.user?.id ?? null));
   }, []);
 
-  // Light the bell when there's an incoming wave/opener awaiting your response.
+  // Light the bell when any thread has unread incoming activity.
   const refreshUnread = useCallback(async () => {
-    if (!meId) return;
     try {
       const threads = await listMyThreads();
-      setHasUnread(
-        threads.some((t) => t.acceptedAt === null && t.initiatorId !== meId),
-      );
+      setHasUnread(threads.some((t) => t.unread));
     } catch {
       // leave the bell as-is on error
     }
-  }, [meId]);
+  }, []);
 
   // Recompute on focus (e.g. returning from Messages after replying clears it).
   useFocusEffect(
