@@ -1,84 +1,88 @@
-import { type ReactNode, useRef } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
-import ReanimatedSwipeable, {
-  type SwipeableMethods,
-} from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { type ReactNode } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Reanimated, {
+  useSharedValue,
   useAnimatedStyle,
-  type SharedValue,
+  withSpring,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, typography } from '../theme';
 
 const ACTION_WIDTH = 96;
+const OPEN_X = -ACTION_WIDTH;
+const THRESHOLD = -ACTION_WIDTH / 2;
+const SPRING = { damping: 18, stiffness: 220 };
 
 type Props = {
   children: ReactNode;
   onRemove: () => void;
 };
 
-// Swipe-left to reveal a Remove action, via react-native-gesture-handler's
-// ReanimatedSwipeable (runs on the UI thread — smooth, native-grade gesture).
+// Swipe-left to reveal a Remove action. Built on GestureDetector + Gesture.Pan
+// with explicit activation offsets: it claims the touch only on a clear
+// horizontal drag, and yields to vertical scrolling so the list still scrolls.
 export default function SwipeableRow({ children, onRemove }: Props) {
-  const ref = useRef<SwipeableMethods>(null);
+  const tx = useSharedValue(0);
+  const startX = useSharedValue(0);
 
-  return (
-    <ReanimatedSwipeable
-      ref={ref}
-      friction={2}
-      rightThreshold={40}
-      overshootRight={false}
-      containerStyle={styles.container}
-      renderRightActions={(_progress, drag) => (
-        <RightAction
-          drag={drag}
-          onPress={() => {
-            ref.current?.close();
-            onRemove();
-          }}
-        />
-      )}
-    >
-      {children}
-    </ReanimatedSwipeable>
-  );
-}
+  const pan = Gesture.Pan()
+    .activeOffsetX([-12, 12]) // activate once dragged ~12px horizontally
+    .failOffsetY([-10, 10]) // bail to the scroll view on vertical movement
+    .onStart(() => {
+      startX.value = tx.value;
+    })
+    .onUpdate((e) => {
+      const next = startX.value + e.translationX;
+      // clamp between fully-open (with a little resistance) and closed
+      tx.value = Math.min(0, Math.max(OPEN_X - 16, next));
+    })
+    .onEnd(() => {
+      tx.value = withSpring(tx.value < THRESHOLD ? OPEN_X : 0, SPRING);
+    });
 
-function RightAction({
-  drag,
-  onPress,
-}: {
-  drag: SharedValue<number>;
-  onPress: () => void;
-}) {
-  // Keep the action pinned to the row's right edge as it's dragged open.
-  const style = useAnimatedStyle(() => ({
-    transform: [{ translateX: drag.value + ACTION_WIDTH }],
+  const rowStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: tx.value }],
   }));
 
+  const close = () => {
+    tx.value = withSpring(0, SPRING);
+  };
+
   return (
-    <Reanimated.View style={[styles.actionWrap, style]}>
-      <Pressable
-        onPress={onPress}
-        style={({ pressed }) => [styles.action, pressed && { opacity: 0.85 }]}
-      >
-        <Ionicons name="trash-outline" size={20} color={colors.background} />
-        <Text style={styles.actionText}>Remove</Text>
-      </Pressable>
-    </Reanimated.View>
+    <View style={styles.wrap}>
+      <View style={styles.actionLayer}>
+        <Pressable
+          onPress={() => {
+            close();
+            onRemove();
+          }}
+          style={({ pressed }) => [styles.action, pressed && { opacity: 0.85 }]}
+        >
+          <Ionicons name="trash-outline" size={20} color={colors.background} />
+          <Text style={styles.actionText}>Remove</Text>
+        </Pressable>
+      </View>
+      <GestureDetector gesture={pan}>
+        <Reanimated.View style={rowStyle}>{children}</Reanimated.View>
+      </GestureDetector>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { borderRadius: radius.lg },
-  actionWrap: { width: ACTION_WIDTH },
+  wrap: { borderRadius: radius.lg, overflow: 'hidden' },
+  actionLayer: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
   action: {
-    flex: 1,
+    width: ACTION_WIDTH,
     backgroundColor: colors.secondary,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
-    borderRadius: radius.lg,
   },
   actionText: {
     ...typography.caption,
