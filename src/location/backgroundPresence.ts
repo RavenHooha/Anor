@@ -1,5 +1,7 @@
 import * as TaskManager from 'expo-task-manager';
 import * as Location from 'expo-location';
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { colors } from '../theme';
@@ -17,6 +19,7 @@ export const BG_PRESENCE_TASK = 'anor-bg-presence';
 const BREADCRUMB_KEY = 'anor.bgPresence.lastRun';
 const LAST_BG_KEY = 'anor.bgPresence.lastBackground';
 const DISCOVERABLE_PREF_KEY = 'anor.discoverable.pref';
+const NOTIFIED_VENUE_KEY = 'anor.checkin.notifiedVenue';
 
 export type CheckinSource = 'bg' | 'fg';
 
@@ -139,13 +142,15 @@ async function ensureAuthedUserId(): Promise<{ id: string | null; reason: string
 }
 
 type CheckinResult = {
+  venueId: string | null;
   venueName: string | null;
   confirmed: boolean;
+  copresentCount: number;
 };
 
 // Write location AND advance the server-side venue dwell state in one call.
-// Returns the current seeded venue + whether the 4-min dwell is confirmed, or
-// an error string.
+// Returns the current seeded venue, whether the 4-min dwell is confirmed, and
+// how many others are confirmed there — or an error string.
 async function checkinPresence(
   coords: { lat: number; lng: number; accuracy: number },
 ): Promise<CheckinResult | { error: string }> {
@@ -157,9 +162,58 @@ async function checkinPresence(
   if (error) return { error: error.message };
   const row = Array.isArray(data) ? data[0] : data;
   return {
+    venueId: row?.venue_id ?? null,
     venueName: row?.venue_name ?? null,
     confirmed: !!row?.dwell_confirmed,
+    copresentCount: typeof row?.copresent_count === 'number' ? row.copresent_count : 0,
   };
+}
+
+// Fire a gentle local notification the first time a check-in is confirmed at a
+// venue where others are present — once per visit. Re-arms when you leave (or
+// move to a different venue), and notifies if you checked in alone and someone
+// shows up later. Silent when you're alone (nothing to act on).
+async function maybeNotifyCheckin(
+  venueId: string,
+  venueName: string | null,
+  copresentCount: number,
+): Promise<void> {
+  try {
+    const alreadyNotified = await AsyncStorage.getItem(NOTIFIED_VENUE_KEY);
+    if (alreadyNotified === venueId) return; // already nudged this visit
+    if (copresentCount <= 0) return; // no one to connect with yet
+
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'Messages',
+        importance: Notifications.AndroidImportance.HIGH,
+        sound: 'default',
+      });
+    }
+
+    const people =
+      copresentCount === 1 ? '1 person is' : `${copresentCount} people are`;
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: venueName ? `You're at ${venueName}` : "You're checked in",
+        body: `${people} open to connect here right now.`,
+        data: { type: 'copresence' },
+      },
+      trigger: null, // immediate
+    });
+
+    await AsyncStorage.setItem(NOTIFIED_VENUE_KEY, venueId);
+  } catch {
+    // Notification is best-effort; never let it crash the check-in.
+  }
+}
+
+async function clearNotifiedVenue(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(NOTIFIED_VENUE_KEY);
+  } catch {
+    // best-effort
+  }
 }
 
 // Shared by both the background task and the foreground "check now" path:
@@ -180,10 +234,19 @@ async function runCheckin(
     return;
   }
 
+  // Nudge once per visit when you're confirmed and others are here; re-arm when
+  // you're not at a confirmed venue so the next arrival notifies again.
+  if (result.confirmed && result.venueId) {
+    await maybeNotifyCheckin(result.venueId, result.venueName, result.copresentCount);
+  } else {
+    await clearNotifiedVenue();
+  }
+
   // Make the dwell state legible in the breadcrumb so it's testable on-device.
   let msg: string;
   if (result.confirmed) {
-    msg = `checked in at ${result.venueName} (dwell ✓)`;
+    const others = result.copresentCount > 0 ? ` · ${result.copresentCount} here` : '';
+    msg = `checked in at ${result.venueName} (dwell ✓)${others}`;
   } else if (result.venueName) {
     msg = `at ${result.venueName} — settling…`;
   } else {

@@ -1,6 +1,9 @@
 -- Enrich venue_copresence() with the same supporter columns nearby() returns
 -- (0033), so "Here now" cards render founding badges / supporter accents
--- consistently with the nearby feed. Pure additive replace of the function.
+-- consistently with the nearby feed.
+
+-- Return type changes (more columns), so drop the 0038 version first.
+drop function if exists venue_copresence();
 
 create or replace function venue_copresence()
 returns table (

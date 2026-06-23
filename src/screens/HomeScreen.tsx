@@ -15,7 +15,13 @@ import VenueEditor from '../components/VenueEditor';
 import LoadingScreen from '../components/LoadingScreen';
 import { loadStatus, saveStatus } from '../storage/status';
 import { loadRadius, saveRadius } from '../storage/radius';
-import { fetchNearby, fetchCopresence, DEFAULT_RADIUS_M, RADIUS_PRESETS } from '../data/nearby';
+import {
+  fetchNearby,
+  fetchCopresence,
+  fetchMyCheckin,
+  DEFAULT_RADIUS_M,
+  RADIUS_PRESETS,
+} from '../data/nearby';
 import { fetchNearbyVenues, type NearbyVenue } from '../data/venues';
 import { getMyVenue } from '../data/venue';
 import { createOrGetThread } from '../storage/threads';
@@ -35,6 +41,7 @@ export default function HomeScreen() {
   const [nearby, setNearby] = useState<NearbyUser[]>([]);
   const [hereUsers, setHereUsers] = useState<NearbyUser[]>([]);
   const [hereVenue, setHereVenue] = useState<string | null>(null);
+  const [checkedInVenue, setCheckedInVenue] = useState<string | null>(null);
   const [venues, setVenues] = useState<NearbyVenue[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [areaNames, setAreaNames] = useState<AreaNames | null>(null);
@@ -55,17 +62,19 @@ export default function HomeScreen() {
   const loadNearby = useCallback(async () => {
     if (!coords) return;
     try {
-      const [users, nearbyVenues, myVenue, here] = await Promise.all([
+      const [users, nearbyVenues, myVenue, here, checkin] = await Promise.all([
         fetchNearby(coords, radiusM),
         fetchNearbyVenues(coords, radiusM),
         getMyVenue(),
         fetchCopresence(),
+        fetchMyCheckin(),
       ]);
       setNearby(users);
       setVenues(nearbyVenues);
       setVenue(myVenue);
       setHereUsers(here.users);
       setHereVenue(here.venue);
+      setCheckedInVenue(checkin.confirmed ? checkin.venueName : null);
     } catch {
       // ignore — banner state covers errors
     }
@@ -167,11 +176,20 @@ export default function HomeScreen() {
 
         <StatusSelector current={status} onChange={onChange} />
 
-        <VenueEditor
-          venue={venue}
-          onChange={setVenue}
-          disabled={!coords || isFocus}
-        />
+        {checkedInVenue && !isFocus ? (
+          <View style={styles.checkedInChip}>
+            <Ionicons name="location" size={16} color={colors.primary} />
+            <Text style={styles.checkedInText} numberOfLines={1}>
+              Checked in at {checkedInVenue}
+            </Text>
+          </View>
+        ) : (
+          <VenueEditor
+            venue={venue}
+            onChange={setVenue}
+            disabled={!coords || isFocus}
+          />
+        )}
 
         <RadiusSelector current={radiusM} onChange={onChangeRadius} />
 
@@ -397,6 +415,24 @@ const styles = StyleSheet.create({
   },
   grid: {
     gap: spacing.md,
+  },
+  checkedInChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.surfaceElevated,
+  },
+  checkedInText: {
+    ...typography.caption,
+    color: colors.textPrimary,
+    fontWeight: '600',
+    maxWidth: 240,
   },
   hereSection: { gap: spacing.sm, marginTop: spacing.md },
   hereTitle: { color: colors.primary },

@@ -55,6 +55,28 @@ export async function fetchCopresence(): Promise<{
   };
 }
 
+/**
+ * My own current seeded-venue check-in, for the "Checked in at {venue}" UI.
+ * Swallows errors (returns not-confirmed) so a missing RPC never breaks the
+ * rest of the feed load.
+ */
+export async function fetchMyCheckin(): Promise<{
+  venueName: string | null;
+  confirmed: boolean;
+}> {
+  try {
+    const { data, error } = await supabase.rpc('my_checkin');
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
+    return {
+      venueName: row?.venue_name ?? null,
+      confirmed: !!row?.dwell_confirmed,
+    };
+  } catch {
+    return { venueName: null, confirmed: false };
+  }
+}
+
 function mapRow(r: RpcRow): NearbyUser {
   return {
     id: r.id,
