@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { currentUserId, requireUserId } from '../lib/session';
 import type { Status } from '../types/status';
 
 const VALID: readonly Status[] = ['open', 'connect', 'focus', 'spark'];
@@ -8,8 +9,7 @@ const VALID: readonly Status[] = ['open', 'connect', 'focus', 'spark'];
 const STATUS_STALE_HOURS = 8;
 
 export async function loadStatus(): Promise<Status | null> {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
+  const userId = await currentUserId();
   if (!userId) return null;
 
   const { data, error } = await supabase
@@ -34,9 +34,7 @@ export async function loadStatus(): Promise<Status | null> {
 }
 
 export async function saveStatus(status: Status): Promise<void> {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
-  if (!userId) throw new Error('Not authenticated');
+  const userId = await requireUserId();
 
   const { error } = await supabase
     .from('presence')
@@ -45,8 +43,7 @@ export async function saveStatus(status: Status): Promise<void> {
 }
 
 export async function clearStatus(): Promise<void> {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
+  const userId = await currentUserId();
   if (!userId) return;
 
   await supabase

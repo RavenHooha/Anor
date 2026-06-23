@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { currentUserId, requireUserId } from '../lib/session';
 
 export const MESSAGE_CAP = 100;
 export const MESSAGE_LIMIT = 500;
@@ -58,8 +59,7 @@ export async function createOrGetThread(
  * Returns null if no thread exists yet.
  */
 export async function findExistingThread(otherUserId: string): Promise<string | null> {
-  const { data: userData } = await supabase.auth.getUser();
-  const me = userData.user?.id;
+  const me = await currentUserId();
   if (!me) return null;
   const a = me < otherUserId ? me : otherUserId;
   const b = me < otherUserId ? otherUserId : me;
@@ -111,8 +111,7 @@ export async function markThreadRead(threadId: string): Promise<void> {
 }
 
 export async function getThread(threadId: string): Promise<ThreadDetail | null> {
-  const { data: userData } = await supabase.auth.getUser();
-  const me = userData.user?.id;
+  const me = await currentUserId();
   if (!me) return null;
 
   const { data, error } = await supabase
@@ -166,9 +165,7 @@ export async function listMessages(threadId: string): Promise<Message[]> {
 }
 
 export async function sendMessage(threadId: string, body: string): Promise<Message> {
-  const { data: userData } = await supabase.auth.getUser();
-  const me = userData.user?.id;
-  if (!me) throw new Error('Not authenticated');
+  const me = await requireUserId();
 
   const trimmed = body.trim();
   if (trimmed.length === 0) throw new Error('Message is empty');
