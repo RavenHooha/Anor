@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { reportError, reportEvent } from '../lib/report';
+import { initAnalyticsFromPersistedOptIn, flushAnalytics } from '../lib/analytics';
 import { colors } from '../theme';
 
 // ---------------------------------------------------------------------------
@@ -274,42 +275,51 @@ async function runCheckin(
 
 // Must be defined in module/global scope so the OS can invoke it on cold start.
 TaskManager.defineTask(BG_PRESENCE_TASK, async ({ data, error }) => {
-  // Count every OS invocation — this is the denominator that tells us whether
-  // Android OEMs are killing the foreground service (no events = task starved).
-  reportEvent('presence_bg_fired');
+  // Headless: the React-tree analytics init never ran here, so the PostHog
+  // client is null and every track() below would be a silent no-op. Honor the
+  // persisted opt-in first (emits nothing for opted-out users), and flush at the
+  // end since batched events would be lost when this JS context is torn down.
+  await initAnalyticsFromPersistedOptIn();
+  try {
+    // Count every OS invocation — this is the denominator that tells us whether
+    // Android OEMs are killing the foreground service (no events = task starved).
+    reportEvent('presence_bg_fired');
 
-  if (error) {
-    await writeBreadcrumb(false, `task error: ${error.message}`, 'bg');
-    reportError(`bg presence task error: ${error.message}`, {
-      area: 'presence',
-      op: 'bg_task',
-      reason: 'task_error',
-      event: 'presence_checkin_failed',
-    });
-    return;
+    if (error) {
+      await writeBreadcrumb(false, `task error: ${error.message}`, 'bg');
+      reportError(`bg presence task error: ${error.message}`, {
+        area: 'presence',
+        op: 'bg_task',
+        reason: 'task_error',
+        event: 'presence_checkin_failed',
+      });
+      return;
+    }
+
+    const locations = (data as { locations?: Location.LocationObject[] })?.locations;
+    const pos = locations?.[locations.length - 1];
+    if (!pos) {
+      await writeBreadcrumb(false, 'task fired with no location', 'bg');
+      reportError('bg presence task fired with no location', {
+        area: 'presence',
+        op: 'bg_task',
+        reason: 'no_location',
+        event: 'presence_checkin_failed',
+      });
+      return;
+    }
+
+    await runCheckin(
+      {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: Math.round(pos.coords.accuracy ?? 0),
+      },
+      'bg',
+    );
+  } finally {
+    await flushAnalytics();
   }
-
-  const locations = (data as { locations?: Location.LocationObject[] })?.locations;
-  const pos = locations?.[locations.length - 1];
-  if (!pos) {
-    await writeBreadcrumb(false, 'task fired with no location', 'bg');
-    reportError('bg presence task fired with no location', {
-      area: 'presence',
-      op: 'bg_task',
-      reason: 'no_location',
-      event: 'presence_checkin_failed',
-    });
-    return;
-  }
-
-  await runCheckin(
-    {
-      lat: pos.coords.latitude,
-      lng: pos.coords.longitude,
-      accuracy: Math.round(pos.coords.accuracy ?? 0),
-    },
-    'bg',
-  );
 });
 
 /**
