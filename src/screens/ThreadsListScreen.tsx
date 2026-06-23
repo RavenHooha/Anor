@@ -8,6 +8,7 @@ import {
   FlatList,
   RefreshControl,
   DeviceEventEmitter,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,7 +16,6 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, spacing, radius, typography } from '../theme';
 import { listMyThreads, hideThread, type ThreadSummary } from '../storage/threads';
-import SwipeableRow from '../components/SwipeableRow';
 import { subscribeToMyThreadChanges } from '../storage/realtime';
 import { supabase } from '../lib/supabase';
 import type { RootStackParamList } from '../navigation/types';
@@ -75,16 +75,27 @@ export default function ThreadsListScreen() {
   };
 
   const onRemove = useCallback(
-    async (threadId: string) => {
-      // Optimistic — drop it now, restore by refetch if the call fails. No
-      // confirm dialog: swipe-then-tap-Remove is already deliberate, and a
-      // removed thread is recoverable (it un-hides on any new message).
-      setThreads((prev) => prev.filter((t) => t.threadId !== threadId));
-      try {
-        await hideThread(threadId);
-      } catch {
-        load();
-      }
+    (threadId: string, name: string) => {
+      Alert.alert(
+        'Remove conversation?',
+        `This removes it from your messages. ${name} keeps their copy, and it comes back if either of you sends a new message.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Remove',
+            style: 'destructive',
+            onPress: async () => {
+              // Optimistic — drop it now, restore by refetch if the call fails.
+              setThreads((prev) => prev.filter((t) => t.threadId !== threadId));
+              try {
+                await hideThread(threadId);
+              } catch {
+                load();
+              }
+            },
+          },
+        ],
+      );
     },
     [load],
   );
@@ -98,13 +109,12 @@ export default function ThreadsListScreen() {
         data={threads}
         keyExtractor={(item) => item.threadId}
         renderItem={({ item }) => (
-          <SwipeableRow onRemove={() => onRemove(item.threadId)}>
-            <ThreadRow
-              item={item}
-              meId={meId}
-              onPress={() => open(item.threadId)}
-            />
-          </SwipeableRow>
+          <ThreadRow
+            item={item}
+            meId={meId}
+            onPress={() => open(item.threadId)}
+            onLongPress={() => onRemove(item.threadId, item.otherName)}
+          />
         )}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -131,10 +141,12 @@ function ThreadRow({
   item,
   meId,
   onPress,
+  onLongPress,
 }: {
   item: ThreadSummary;
   meId: string | null;
   onPress: () => void;
+  onLongPress: () => void;
 }) {
   const pending = item.acceptedAt === null;
   const iInitiated = item.initiatorId === meId;
@@ -159,6 +171,8 @@ function ThreadRow({
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={350}
       style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}
     >
       <View style={styles.avatarFrame}>
