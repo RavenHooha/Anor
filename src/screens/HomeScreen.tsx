@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
 import StatusSelector from '../components/StatusSelector';
 import StatusBadge from '../components/StatusBadge';
+import NotificationBell from '../components/NotificationBell';
 import NearbyCard from '../components/NearbyCard';
 import MysteryCard from '../components/MysteryCard';
 import VenueCard from '../components/VenueCard';
@@ -25,7 +26,8 @@ import {
 import { fetchNearbyVenues, type NearbyVenue } from '../data/venues';
 import { getMyVenue } from '../data/venue';
 import { setNearbyAlert, clearNearbyAlert, getNearbyAlert } from '../data/alerts';
-import { createOrGetThread } from '../storage/threads';
+import { createOrGetThread, listMyThreads } from '../storage/threads';
+import { supabase } from '../lib/supabase';
 import { useBleNearby } from '../ble/useBleNearby';
 import { useLocation } from '../location/useLocation';
 import { reverseGeocodeArea, type AreaNames } from '../location/location';
@@ -45,6 +47,8 @@ export default function HomeScreen() {
   const [checkedInVenue, setCheckedInVenue] = useState<string | null>(null);
   const [alertActive, setAlertActive] = useState(false);
   const [savingAlert, setSavingAlert] = useState(false);
+  const [meId, setMeId] = useState<string | null>(null);
+  const [hasUnread, setHasUnread] = useState(false);
   const [venues, setVenues] = useState<NearbyVenue[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [areaNames, setAreaNames] = useState<AreaNames | null>(null);
@@ -60,7 +64,28 @@ export default function HomeScreen() {
       setStatusLoaded(true);
     });
     loadRadius().then(setRadiusM);
+    supabase.auth.getUser().then(({ data }) => setMeId(data.user?.id ?? null));
   }, []);
+
+  // Light the bell when there's an incoming wave/opener awaiting your response.
+  const refreshUnread = useCallback(async () => {
+    if (!meId) return;
+    try {
+      const threads = await listMyThreads();
+      setHasUnread(
+        threads.some((t) => t.acceptedAt === null && t.initiatorId !== meId),
+      );
+    } catch {
+      // leave the bell as-is on error
+    }
+  }, [meId]);
+
+  // Recompute on focus (e.g. returning from Messages after replying clears it).
+  useFocusEffect(
+    useCallback(() => {
+      refreshUnread();
+    }, [refreshUnread]),
+  );
 
   const loadNearby = useCallback(async () => {
     if (!coords) return;
@@ -183,13 +208,10 @@ export default function HomeScreen() {
       >
         <View style={styles.headerRow}>
           <Text style={styles.brand}>anor</Text>
-          <Pressable
+          <NotificationBell
+            active={hasUnread}
             onPress={() => navigation.navigate('Main', { screen: 'Threads' })}
-            hitSlop={8}
-            style={({ pressed }) => [styles.bellBtn, pressed && { opacity: 0.6 }]}
-          >
-            <Ionicons name="notifications-outline" size={22} color={colors.textSecondary} />
-          </Pressable>
+          />
         </View>
 
         <StatusBadge status={status} />
