@@ -104,9 +104,13 @@ export default function HomeScreen() {
     }
   }, [coords, radiusM]);
 
-  useEffect(() => {
-    loadNearby();
-  }, [loadNearby]);
+  // Load on focus (and whenever coords/radius change), so returning to Home
+  // refreshes immediately instead of waiting on the interval below.
+  useFocusEffect(
+    useCallback(() => {
+      loadNearby();
+    }, [loadNearby]),
+  );
 
   useEffect(() => {
     if (!coords || status === 'focus') return;
