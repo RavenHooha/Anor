@@ -24,6 +24,7 @@ import {
 } from '../data/nearby';
 import { fetchNearbyVenues, type NearbyVenue } from '../data/venues';
 import { getMyVenue } from '../data/venue';
+import { setNearbyAlert, clearNearbyAlert, getNearbyAlert } from '../data/alerts';
 import { createOrGetThread } from '../storage/threads';
 import { useBleNearby } from '../ble/useBleNearby';
 import { useLocation } from '../location/useLocation';
@@ -42,6 +43,8 @@ export default function HomeScreen() {
   const [hereUsers, setHereUsers] = useState<NearbyUser[]>([]);
   const [hereVenue, setHereVenue] = useState<string | null>(null);
   const [checkedInVenue, setCheckedInVenue] = useState<string | null>(null);
+  const [alertActive, setAlertActive] = useState(false);
+  const [savingAlert, setSavingAlert] = useState(false);
   const [venues, setVenues] = useState<NearbyVenue[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [areaNames, setAreaNames] = useState<AreaNames | null>(null);
@@ -62,12 +65,13 @@ export default function HomeScreen() {
   const loadNearby = useCallback(async () => {
     if (!coords) return;
     try {
-      const [users, nearbyVenues, myVenue, here, checkin] = await Promise.all([
+      const [users, nearbyVenues, myVenue, here, checkin, alert] = await Promise.all([
         fetchNearby(coords, radiusM),
         fetchNearbyVenues(coords, radiusM),
         getMyVenue(),
         fetchCopresence(),
         fetchMyCheckin(),
+        getNearbyAlert(),
       ]);
       setNearby(users);
       setVenues(nearbyVenues);
@@ -75,6 +79,7 @@ export default function HomeScreen() {
       setHereUsers(here.users);
       setHereVenue(here.venue);
       setCheckedInVenue(checkin.confirmed ? checkin.venueName : null);
+      setAlertActive(alert?.active ?? false);
     } catch {
       // ignore — banner state covers errors
     }
@@ -109,6 +114,21 @@ export default function HomeScreen() {
   const onChangeRadius = (m: number) => {
     setRadiusM(m);
     saveRadius(m).catch(() => {});
+  };
+
+  const onToggleAlert = async () => {
+    if (savingAlert || !coords) return;
+    const next = !alertActive;
+    setSavingAlert(true);
+    setAlertActive(next); // optimistic
+    try {
+      if (next) await setNearbyAlert(coords, radiusM);
+      else await clearNearbyAlert();
+    } catch {
+      setAlertActive(!next);
+    } finally {
+      setSavingAlert(false);
+    }
   };
 
   const openProfile = (user: NearbyUser) => {
@@ -207,13 +227,47 @@ export default function HomeScreen() {
               />
             </View>
             <Text style={styles.emptyTitle}>
-              {coords ? 'No one nearby yet' : 'Finding your location…'}
+              {!coords
+                ? 'Finding your location…'
+                : venues.length > 0
+                  ? "Quiet right now"
+                  : 'Be the first one here'}
             </Text>
             <Text style={styles.emptyBody}>
-              {coords
-                ? `You're early in ${areaName ?? 'this area'}. Pull down to refresh, or widen your radius above to reach further out.`
-                : "Hang tight — we need your location to show who's around."}
+              {!coords
+                ? "Hang tight — we need your location to show who's around."
+                : venues.length > 0
+                  ? `No one's set a vibe near you yet — but there's plenty around ${areaName ?? 'you'}. Check out the places below, or get a heads-up the moment someone shows up.`
+                  : `You're early in ${areaName ?? 'this area'}. Set your vibe so you're visible, widen your radius, or get pinged when someone arrives.`}
             </Text>
+
+            {coords && (
+              <Pressable
+                onPress={onToggleAlert}
+                disabled={savingAlert}
+                style={({ pressed }) => [
+                  styles.alertBtn,
+                  alertActive && styles.alertBtnActive,
+                  pressed && { opacity: 0.7 },
+                ]}
+              >
+                <Ionicons
+                  name={alertActive ? 'notifications' : 'notifications-outline'}
+                  size={16}
+                  color={alertActive ? colors.background : colors.primary}
+                />
+                <Text
+                  style={[
+                    styles.alertBtnText,
+                    alertActive && styles.alertBtnTextActive,
+                  ]}
+                >
+                  {alertActive
+                    ? "We'll ping you — tap to cancel"
+                    : 'Notify me when someone’s around'}
+                </Text>
+              </Pressable>
+            )}
           </View>
         ) : (
           <View style={styles.countRow}>
@@ -413,6 +467,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     lineHeight: 18,
   },
+  alertBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
+  },
+  alertBtnActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  alertBtnText: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  alertBtnTextActive: { color: colors.background },
   grid: {
     gap: spacing.md,
   },
