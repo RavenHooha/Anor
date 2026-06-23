@@ -71,6 +71,15 @@ export async function findExistingThread(otherUserId: string): Promise<string | 
   return data.id;
 }
 
+/**
+ * Remove a thread from MY list only (per-side soft hide). The other person
+ * keeps their copy; any new message un-hides it again. Not a hard delete.
+ */
+export async function hideThread(threadId: string): Promise<void> {
+  const { error } = await supabase.rpc('hide_thread', { p_thread_id: threadId });
+  if (error) throw error;
+}
+
 export async function listMyThreads(): Promise<ThreadSummary[]> {
   const { data, error } = await supabase.rpc('list_my_threads');
   if (error) throw error;
