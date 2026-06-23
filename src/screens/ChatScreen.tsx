@@ -145,6 +145,8 @@ export default function ChatScreen({ route, navigation }: Props) {
         <Pressable
           onPress={openMenu}
           hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Options for ${otherName}`}
           style={({ pressed }) => [
             { marginRight: 12, opacity: pressed ? 0.6 : 1 },
           ]}
@@ -265,6 +267,9 @@ export default function ChatScreen({ route, navigation }: Props) {
           <Pressable
             onPress={onSend}
             disabled={sending || body.trim().length === 0}
+            accessibilityRole="button"
+            accessibilityLabel="Send message"
+            accessibilityState={{ disabled: sending || body.trim().length === 0 }}
             style={({ pressed }) => [
               styles.sendBtn,
               (sending || body.trim().length === 0) && styles.sendBtnDisabled,

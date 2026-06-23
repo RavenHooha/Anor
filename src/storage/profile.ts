@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { currentUserId, requireUserId } from '../lib/session';
 import {
   NO_SUPPORTER,
   type SupporterInfo,
@@ -23,8 +24,7 @@ export type Profile = {
 export const MAX_PHOTOS = 4;
 
 export async function getMyProfile(): Promise<Profile | null> {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
+  const userId = await currentUserId();
   if (!userId) return null;
 
   const { data, error } = await supabase
@@ -54,8 +54,7 @@ export async function getMyProfile(): Promise<Profile | null> {
 // Reads the subscriptions row (RLS allows self-read) and the cosmetic columns
 // on the own profile. Returns NO_SUPPORTER when there's no active sub.
 export async function getMySupporter(): Promise<SupporterInfo> {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
+  const userId = await currentUserId();
   if (!userId) return NO_SUPPORTER;
 
   const { data: sub } = await supabase
@@ -93,9 +92,7 @@ export async function setProfileCosmetics(input: {
   accentColor?: string | null;
   profileBackground?: string | null;
 }): Promise<void> {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
-  if (!userId) throw new Error('Not authenticated');
+  const userId = await requireUserId();
   const row: Record<string, unknown> = {};
   if (input.accentColor !== undefined) row.accent_color = input.accentColor;
   if (input.profileBackground !== undefined)
@@ -106,9 +103,7 @@ export async function setProfileCosmetics(input: {
 }
 
 export async function setHideMessagePreview(value: boolean): Promise<void> {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
-  if (!userId) throw new Error('Not authenticated');
+  const userId = await requireUserId();
   const { error } = await supabase
     .from('profiles')
     .update({ hide_message_preview: value })
@@ -117,9 +112,7 @@ export async function setHideMessagePreview(value: boolean): Promise<void> {
 }
 
 export async function setAnalyticsOptedIn(value: boolean): Promise<void> {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
-  if (!userId) throw new Error('Not authenticated');
+  const userId = await requireUserId();
   const { error } = await supabase
     .from('profiles')
     .update({ analytics_opted_in: value })
@@ -139,9 +132,7 @@ export async function exportMyData(): Promise<unknown> {
 }
 
 export async function uploadProfilePhoto(localUri: string): Promise<string> {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
-  if (!userId) throw new Error('Not authenticated');
+  const userId = await requireUserId();
 
   const ext = (localUri.split('.').pop() ?? 'jpg').toLowerCase();
   const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
@@ -170,9 +161,7 @@ export async function upsertMyProfile(input: {
   connectPrefs?: string[];
   age?: number | null;
 }): Promise<Profile> {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
-  if (!userId) throw new Error('Not authenticated');
+  const userId = await requireUserId();
 
   const row: Record<string, unknown> = {
     id: userId,

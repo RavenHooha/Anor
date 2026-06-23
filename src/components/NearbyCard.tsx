@@ -1,5 +1,6 @@
-import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Avatar from './Avatar';
 import { colors, spacing, radius, typography } from '../theme';
 import { STATUS_BY_ID } from '../types/status';
 import { isFoundingMember } from '../lib/founding';
@@ -47,7 +48,7 @@ export default function NearbyCard({ user, onPress, onMessage, hideDistance }: P
       ]}
     >
       <View style={styles.photoWrap}>
-        <Image source={{ uri: user.photoUrl }} style={styles.photo} />
+        <Avatar uri={user.photoUrl} name={user.name} size={110} style={styles.photo} />
         <View style={[styles.statusDot, { backgroundColor: cfg.color }]} />
       </View>
       <View style={styles.body}>
@@ -90,6 +91,8 @@ export default function NearbyCard({ user, onPress, onMessage, hideDistance }: P
             onMessage(user);
           }}
           hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Message ${user.name}`}
           style={({ pressed }) => [
             styles.chatBtn,
             pressed && styles.chatBtnPressed,

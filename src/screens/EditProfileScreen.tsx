@@ -61,6 +61,10 @@ export default function EditProfileScreen({ navigation }: Props) {
       setError('Name is required.');
       return;
     }
+    if (photos.length === 0) {
+      setError('Add at least one photo so people can recognize you.');
+      return;
+    }
     let age: number | null = null;
     if (ageText.trim().length > 0) {
       const parsed = parseInt(ageText.trim(), 10);

@@ -42,6 +42,8 @@ export default function NotificationBell({ active, onPress }: Props) {
     <Pressable
       onPress={onPress}
       hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={active ? 'Messages, something is waiting' : 'Messages'}
       style={({ pressed }) => [styles.wrap, pressed && { opacity: 0.6 }]}
     >
       {active && (

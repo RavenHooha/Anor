@@ -26,10 +26,27 @@ function tierFromProductId(id: string | undefined): Tier | null {
   return null;
 }
 
+// Constant-time secret comparison. Hash both sides to fixed-length digests and
+// compare with no early exit, so neither timing nor length leaks information
+// about the configured secret (a plain `!==` short-circuits on first mismatch).
+async function secretsMatch(provided: string, expected: string): Promise<boolean> {
+  const enc = new TextEncoder();
+  const [a, b] = await Promise.all([
+    crypto.subtle.digest('SHA-256', enc.encode(provided)),
+    crypto.subtle.digest('SHA-256', enc.encode(expected)),
+  ]);
+  const va = new Uint8Array(a);
+  const vb = new Uint8Array(b);
+  let diff = 0;
+  for (let i = 0; i < va.length; i++) diff |= va[i] ^ vb[i];
+  return diff === 0;
+}
+
 Deno.serve(async (req) => {
   // Verify the shared secret RevenueCat sends in the Authorization header.
   const secret = Deno.env.get('REVENUECAT_WEBHOOK_SECRET');
-  if (!secret || req.headers.get('Authorization') !== secret) {
+  const provided = req.headers.get('Authorization') ?? '';
+  if (!secret || !(await secretsMatch(provided, secret))) {
     return new Response('Unauthorized', { status: 401 });
   }
 

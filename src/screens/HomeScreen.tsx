@@ -179,8 +179,13 @@ export default function HomeScreen() {
   const hereIds = new Set(hereUsers.map((u) => u.id));
   const generalNearby = nearby.filter((u) => !hereIds.has(u.id));
   const showHere = !isFocus && hereUsers.length > 0;
-  const totalNearby =
-    generalNearby.length + bleDevices.length + (showHere ? hereUsers.length : 0);
+  // Headline count = GPS-known people only. A BLE peripheral id can't be linked
+  // to a user id, so adding bleDevices here would double-count anyone
+  // discoverable both ways — and BLE devices aren't "within {area}", they're in
+  // Bluetooth range. They get their own honest line below instead.
+  const knownNearby = generalNearby.length + (showHere ? hereUsers.length : 0);
+  // The feed isn't empty if there's any signal at all, Bluetooth included.
+  const hasAnyone = knownNearby > 0 || bleDevices.length > 0;
 
   const preset = RADIUS_PRESETS.find((p) => p.meters === radiusM);
   const presetId = preset?.id ?? 'here';
@@ -238,7 +243,7 @@ export default function HomeScreen() {
           <Text style={styles.feedNote}>
             Focus mode is on. The feed is paused.
           </Text>
-        ) : totalNearby === 0 ? (
+        ) : !hasAnyone ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconWrap}>
               <Ionicons
@@ -294,8 +299,9 @@ export default function HomeScreen() {
           <View style={styles.countRow}>
             <Ionicons name="people-outline" size={14} color={colors.textMuted} />
             <Text style={styles.feedNote}>
-              {totalNearby} {totalNearby === 1 ? 'person' : 'people'} within{' '}
-              {areaName ?? 'range'}
+              {knownNearby > 0
+                ? `${knownNearby} ${knownNearby === 1 ? 'person' : 'people'} within ${areaName ?? 'range'}`
+                : `${bleDevices.length} ${bleDevices.length === 1 ? 'phone' : 'phones'} actively looking nearby`}
             </Text>
           </View>
         )}
