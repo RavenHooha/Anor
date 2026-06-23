@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import * as Sentry from '@sentry/react-native';
 import * as Updates from 'expo-updates';
@@ -189,22 +190,24 @@ function App() {
   const ready = sessionLoaded && (!session || hasProfile !== null);
 
   return (
-    <SafeAreaProvider style={{ flex: 1, backgroundColor: colors.background }}>
-      <KeyboardProvider>
-        <StatusBar style="light" />
-        {ready ? (
-          <ProfileGateProvider value={gate}>
-            <RootNavigator
-              isAuthed={!!session}
-              hasProfile={!!session && hasProfile === true}
-            />
-          </ProfileGateProvider>
-        ) : (
-          <View style={{ flex: 1, backgroundColor: colors.background }} />
-        )}
-        {updating && <UpdateOverlay />}
-      </KeyboardProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider style={{ flex: 1, backgroundColor: colors.background }}>
+        <KeyboardProvider>
+          <StatusBar style="light" />
+          {ready ? (
+            <ProfileGateProvider value={gate}>
+              <RootNavigator
+                isAuthed={!!session}
+                hasProfile={!!session && hasProfile === true}
+              />
+            </ProfileGateProvider>
+          ) : (
+            <View style={{ flex: 1, backgroundColor: colors.background }} />
+          )}
+          {updating && <UpdateOverlay />}
+        </KeyboardProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

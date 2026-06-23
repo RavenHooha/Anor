@@ -1,96 +1,84 @@
-import { useRef, type ReactNode } from 'react';
-import {
-  Animated,
-  PanResponder,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { type ReactNode, useRef } from 'react';
+import { Pressable, StyleSheet, Text } from 'react-native';
+import ReanimatedSwipeable, {
+  type SwipeableMethods,
+} from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Reanimated, {
+  useAnimatedStyle,
+  type SharedValue,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, typography } from '../theme';
 
 const ACTION_WIDTH = 96;
-const OPEN_THRESHOLD = 48; // drag past this to snap open / trigger
 
 type Props = {
   children: ReactNode;
   onRemove: () => void;
 };
 
-// Swipe-left to reveal a Remove action. Built on the RN-core PanResponder +
-// Animated so it ships over the air (no native gesture-handler dependency).
+// Swipe-left to reveal a Remove action, via react-native-gesture-handler's
+// ReanimatedSwipeable (runs on the UI thread — smooth, native-grade gesture).
 export default function SwipeableRow({ children, onRemove }: Props) {
-  const translateX = useRef(new Animated.Value(0)).current;
-  const openRef = useRef(false);
-
-  const snap = (toOpen: boolean) => {
-    openRef.current = toOpen;
-    Animated.spring(translateX, {
-      toValue: toOpen ? -ACTION_WIDTH : 0,
-      useNativeDriver: true,
-      bounciness: 0,
-    }).start();
-  };
-
-  const pan = useRef(
-    PanResponder.create({
-      // Only claim the gesture for a clear horizontal drag, so vertical list
-      // scrolling and taps pass through untouched.
-      onMoveShouldSetPanResponder: (_, g) =>
-        Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
-      onPanResponderMove: (_, g) => {
-        const base = openRef.current ? -ACTION_WIDTH : 0;
-        let next = base + g.dx;
-        if (next > 0) next = 0;
-        if (next < -ACTION_WIDTH - 24) next = -ACTION_WIDTH - 24; // a little resistance
-        translateX.setValue(next);
-      },
-      onPanResponderRelease: (_, g) => {
-        const base = openRef.current ? -ACTION_WIDTH : 0;
-        snap(base + g.dx < -OPEN_THRESHOLD);
-      },
-    }),
-  ).current;
+  const ref = useRef<SwipeableMethods>(null);
 
   return (
-    <View style={styles.wrap}>
-      <View style={styles.actionLayer}>
-        <Pressable
+    <ReanimatedSwipeable
+      ref={ref}
+      friction={2}
+      rightThreshold={40}
+      overshootRight={false}
+      containerStyle={styles.container}
+      renderRightActions={(_progress, drag) => (
+        <RightAction
+          drag={drag}
           onPress={() => {
-            snap(false);
+            ref.current?.close();
             onRemove();
           }}
-          style={({ pressed }) => [styles.action, pressed && { opacity: 0.85 }]}
-        >
-          <Ionicons name="trash-outline" size={20} color={colors.background} />
-          <Text style={styles.actionText}>Remove</Text>
-        </Pressable>
-      </View>
-      <Animated.View
-        style={{ transform: [{ translateX }] }}
-        {...pan.panHandlers}
+        />
+      )}
+    >
+      {children}
+    </ReanimatedSwipeable>
+  );
+}
+
+function RightAction({
+  drag,
+  onPress,
+}: {
+  drag: SharedValue<number>;
+  onPress: () => void;
+}) {
+  // Keep the action pinned to the row's right edge as it's dragged open.
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateX: drag.value + ACTION_WIDTH }],
+  }));
+
+  return (
+    <Reanimated.View style={[styles.actionWrap, style]}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.action, pressed && { opacity: 0.85 }]}
       >
-        {children}
-      </Animated.View>
-    </View>
+        <Ionicons name="trash-outline" size={20} color={colors.background} />
+        <Text style={styles.actionText}>Remove</Text>
+      </Pressable>
+    </Reanimated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { borderRadius: radius.lg, overflow: 'hidden' },
-  actionLayer: {
-    ...StyleSheet.absoluteFillObject,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
+  container: { borderRadius: radius.lg },
+  actionWrap: { width: ACTION_WIDTH },
   action: {
-    width: ACTION_WIDTH,
-    height: '100%',
+    flex: 1,
     backgroundColor: colors.secondary,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
+    borderRadius: radius.lg,
   },
   actionText: {
     ...typography.caption,

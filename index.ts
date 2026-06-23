@@ -1,3 +1,6 @@
+// Must be the very first import — react-native-gesture-handler requires this
+// side-effect import at the top of the entry file to register its native module.
+import 'react-native-gesture-handler';
 import { registerRootComponent } from 'expo';
 
 // Import for its side effect: TaskManager.defineTask must run in global scope
