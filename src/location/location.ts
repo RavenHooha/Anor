@@ -24,12 +24,18 @@ export async function requestLocationPermission(): Promise<LocationPermissionRes
 export async function watchLocation(
   onCoords: (c: LocationCoords) => void,
 ): Promise<() => void> {
-  const emit = (pos: Location.LocationObject) =>
-    onCoords({
+  const emit = (pos: Location.LocationObject) => {
+    const c = {
       lat: pos.coords.latitude,
       lng: pos.coords.longitude,
       accuracy: Math.round(pos.coords.accuracy ?? 0),
-    });
+    };
+    if (__DEV__) {
+      // Dev aid: copy into seed_test_users(center_lat, center_lng) — lat first.
+      console.log(`[anor] location fix → lat ${c.lat}, lng ${c.lng} (±${c.accuracy}m)`);
+    }
+    onCoords(c);
+  };
 
   // Fast first paint from a recent cached fix, if there is one.
   try {
