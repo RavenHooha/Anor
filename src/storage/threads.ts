@@ -47,7 +47,9 @@ export async function createOrGetThread(
 ): Promise<string> {
   const { data, error } = await supabase.rpc('create_or_get_thread', {
     other_id: otherUserId,
-    opener,
+    // The RPC accepts a null opener (a pure wave); generated types don't model
+    // nullable text args, so cast to satisfy the signature.
+    opener: opener as string,
   });
   if (error) throw error;
   if (typeof data !== 'string') throw new Error('Bad thread id from RPC');

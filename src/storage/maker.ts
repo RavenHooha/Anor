@@ -31,7 +31,7 @@ export async function listUsersAsMaker(
   offset = 0,
 ): Promise<MakerUser[]> {
   const { data, error } = await supabase.rpc('maker_list_users', {
-    p_search: search,
+    p_search: search ?? undefined,
     p_limit: limit,
     p_offset: offset,
   });

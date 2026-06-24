@@ -8,6 +8,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
+    "db:types": "supabase gen types typescript --linked > src/types/database.ts",
     "postinstall": "patch-package"
   },
   "dependencies": {
@@ -47,6 +48,7 @@
   "devDependencies": {
     "@types/react": "~19.1.0",
     "patch-package": "^8.0.1",
+    "supabase": "^2.107.0",
     "typescript": "~5.9.2"
   },
   "private": true
