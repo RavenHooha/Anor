@@ -24,30 +24,42 @@ export async function requestLocationPermission(): Promise<LocationPermissionRes
 export async function watchLocation(
   onCoords: (c: LocationCoords) => void,
 ): Promise<() => void> {
+  const emit = (pos: Location.LocationObject) =>
+    onCoords({
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+      accuracy: Math.round(pos.coords.accuracy ?? 0),
+    });
+
+  // Fast first paint from a recent cached fix, if there is one.
   try {
     const last = await Location.getLastKnownPositionAsync({ maxAge: 60_000 });
-    if (last) {
-      onCoords({
-        lat: last.coords.latitude,
-        lng: last.coords.longitude,
-        accuracy: Math.round(last.coords.accuracy ?? 0),
-      });
-    }
+    if (last) emit(last);
   } catch {}
+
+  // Force an initial live fix too: getLastKnownPositionAsync is null on a fresh
+  // install, and the watch below can be slow to deliver its first update when the
+  // phone is stationary. Race against a timeout so we never hang on it.
+  Promise.race([
+    Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 10_000)),
+  ])
+    .then((pos) => {
+      if (pos) emit(pos);
+    })
+    .catch(() => {});
 
   const sub = await Location.watchPositionAsync(
     {
       accuracy: Location.Accuracy.Balanced,
-      timeInterval: 30_000,
-      distanceInterval: 20,
+      timeInterval: 15_000,
+      // NO distanceInterval. On Android it maps to setSmallestDisplacement — a
+      // movement FILTER — so a stationary phone gets NO updates and the feed
+      // hangs on "Finding your location" forever (same trap backgroundPresence.ts
+      // documents). Time-based heartbeat only.
+      distanceInterval: 0,
     },
-    (pos) => {
-      onCoords({
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        accuracy: Math.round(pos.coords.accuracy ?? 0),
-      });
-    },
+    emit,
   );
 
   return () => sub.remove();
