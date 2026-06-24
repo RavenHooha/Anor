@@ -396,25 +396,29 @@ function BleBanner({
   status: ReturnType<typeof useBleNearby>['status'];
   onRetry: () => void;
 }) {
-  // On iOS, BLE proximity isn't part of the experience (GPS-only). Don't
-  // surface an "Android-only" notice to every iOS user — just run quietly.
-  if (Platform.OS !== 'android') return null;
   if (status === 'scanning' || status === 'idle' || status === 'requesting') return null;
+  if (status === 'unsupported') return null; // don't nag users whose device can't BLE
+
+  // iOS can't toggle Bluetooth programmatically, so the off-state is informational
+  // there; Android can offer a tap-to-enable.
+  const canEnable = Platform.OS === 'android';
 
   const message =
     status === 'denied'
       ? 'Bluetooth permission denied. Tap to retry.'
-      : status === 'unsupported'
-        ? 'Bluetooth proximity is unavailable on this device.'
-        : status === 'bluetoothOff'
+      : status === 'bluetoothOff'
+        ? canEnable
           ? 'Bluetooth is off. Tap to turn it on and find people nearby.'
-          : "Couldn't start Bluetooth. Tap to retry.";
+          : 'Bluetooth is off. Turn it on to find people right nearby.'
+        : "Couldn't start Bluetooth. Tap to retry.";
 
   const onPress =
     status === 'bluetoothOff'
-      ? () => {
-          enableBluetooth();
-        }
+      ? canEnable
+        ? () => {
+            enableBluetooth();
+          }
+        : undefined
       : status === 'denied' || status === 'error'
         ? onRetry
         : undefined;
