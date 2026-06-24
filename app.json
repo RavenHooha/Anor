@@ -80,7 +80,7 @@
       [
         "react-native-ble-manager",
         {
-          "isBackgroundEnabled": false,
+          "isBackgroundEnabled": true,
           "neverForLocation": true,
           "bluetoothAlwaysPermission": false
         }
