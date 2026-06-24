@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
+import { iconForCategory } from '../data/venueCategories';
 import VenueCard from './VenueCard';
 import type { NearbyVenue } from '../data/venues';
 
@@ -12,11 +13,11 @@ function catOf(v: NearbyVenue): string {
 }
 
 /**
- * The "Places nearby" section: a category filter row plus the venue list. With
- * "All" selected the list is grouped by category (each category's venues
- * together, under a subheader); tapping a category narrows to a flat list of
- * just those. Venues arrive nearest-first, so both category order and
- * within-group order are distance-based.
+ * The "Places nearby" section: a category filter row over a list grouped by
+ * category. Each category is a bold anchor (icon + label + count) with its
+ * venues beneath. "All" shows every category; tapping a chip narrows to one.
+ * Venues arrive nearest-first, so category order and within-group order are
+ * both distance-based.
  */
 export default function VenuesNearby({ venues }: { venues: NearbyVenue[] }) {
   const [filter, setFilter] = useState<string | null>(null);
@@ -35,18 +36,16 @@ export default function VenuesNearby({ venues }: { venues: NearbyVenue[] }) {
   const activeFilter = filter && categories.includes(filter) ? filter : null;
 
   const groups = useMemo(() => {
-    if (activeFilter) return null;
-    const map = new Map<string, NearbyVenue[]>();
+    const byCat = new Map<string, NearbyVenue[]>();
     for (const v of venues) {
       const c = catOf(v);
-      const arr = map.get(c) ?? [];
+      const arr = byCat.get(c) ?? [];
       arr.push(v);
-      map.set(c, arr);
+      byCat.set(c, arr);
     }
-    return categories.map((c) => ({ category: c, venues: map.get(c) ?? [] }));
+    const order = activeFilter ? [activeFilter] : categories;
+    return order.map((c) => ({ category: c, venues: byCat.get(c) ?? [] }));
   }, [venues, categories, activeFilter]);
-
-  const flat = activeFilter ? venues.filter((v) => catOf(v) === activeFilter) : [];
 
   return (
     <View style={styles.section}>
@@ -68,26 +67,21 @@ export default function VenuesNearby({ venues }: { venues: NearbyVenue[] }) {
         </ScrollView>
       )}
 
-      {groups ? (
-        groups.map((g) => (
-          <View key={g.category} style={styles.group}>
-            <Text style={styles.groupTitle}>
-              {g.category} · {g.venues.length}
-            </Text>
-            <View style={styles.grid}>
-              {g.venues.map((v) => (
-                <VenueCard key={v.id} venue={v} />
-              ))}
-            </View>
+      {groups.map((g) => (
+        <View key={g.category} style={styles.group}>
+          <View style={styles.groupHeader}>
+            <Ionicons name={iconForCategory(g.category)} size={16} color={colors.highlight} />
+            <Text style={styles.groupLabel}>{g.category}</Text>
+            <View style={styles.groupRule} />
+            <Text style={styles.groupCount}>{g.venues.length}</Text>
           </View>
-        ))
-      ) : (
-        <View style={styles.grid}>
-          {flat.map((v) => (
-            <VenueCard key={v.id} venue={v} />
-          ))}
+          <View style={styles.grid}>
+            {g.venues.map((v) => (
+              <VenueCard key={v.id} venue={v} />
+            ))}
+          </View>
         </View>
-      )}
+      ))}
     </View>
   );
 }
@@ -136,18 +130,31 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  chipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   chipPressed: { opacity: 0.6 },
   chipLabel: { ...typography.caption, color: colors.textSecondary, fontWeight: '600' },
   chipLabelActive: { color: colors.background },
-  group: { gap: spacing.sm },
-  groupTitle: {
-    ...typography.caption,
-    color: colors.textSecondary,
+  group: { gap: spacing.sm, marginTop: spacing.xs },
+  groupHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  groupLabel: {
+    ...typography.body,
+    fontSize: 15,
     fontWeight: '700',
+    color: colors.textPrimary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  groupRule: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+  },
+  groupCount: {
+    ...typography.caption,
+    color: colors.textMuted,
+    fontWeight: '700',
+    minWidth: 16,
+    textAlign: 'right',
   },
   grid: { gap: spacing.md },
 });

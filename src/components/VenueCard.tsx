@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
+import { iconForCategory } from '../data/venueCategories';
 import type { NearbyVenue } from '../data/venues';
 
 function formatDistance(m: number): string {
@@ -14,38 +15,6 @@ const KIND_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   event: 'calendar',
   update: 'information-circle',
 };
-
-// Per-category glyph so the "Places nearby" list is scannable at a glance
-// instead of a wall of identical storefront icons. Keys are lowercased category
-// labels (see the OSM tag→category map in functions/_shared/osm.ts); anything
-// unmapped falls back to a generic storefront.
-const CATEGORY_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
-  cafe: 'cafe',
-  bar: 'wine',
-  pub: 'beer',
-  restaurant: 'restaurant',
-  food: 'fast-food',
-  bakery: 'cafe',
-  cinema: 'film',
-  theatre: 'musical-notes',
-  nightlife: 'musical-notes',
-  arts: 'color-palette',
-  community: 'people',
-  library: 'library',
-  coworking: 'briefcase',
-  market: 'basket',
-  bookshop: 'book',
-  gym: 'barbell',
-  sports: 'basketball',
-  dance: 'musical-notes',
-  museum: 'business',
-  gallery: 'color-palette',
-};
-
-function iconForCategory(category: string | null): keyof typeof Ionicons.glyphMap {
-  if (!category) return 'storefront';
-  return CATEGORY_ICON[category.toLowerCase()] ?? 'storefront';
-}
 
 export default function VenueCard({ venue }: { venue: NearbyVenue }) {
   const meta = [venue.category, formatDistance(venue.distanceM)]
