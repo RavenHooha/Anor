@@ -73,7 +73,6 @@ export default function VenuesNearby({ venues }: { venues: NearbyVenue[] }) {
             <Ionicons name={iconForCategory(g.category)} size={16} color={colors.highlight} />
             <Text style={styles.groupLabel}>{g.category}</Text>
             <View style={styles.groupRule} />
-            <Text style={styles.groupCount}>{g.venues.length}</Text>
           </View>
           <View style={styles.grid}>
             {g.venues.map((v) => (
@@ -148,13 +147,6 @@ const styles = StyleSheet.create({
     flex: 1,
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.border,
-  },
-  groupCount: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontWeight: '700',
-    minWidth: 16,
-    textAlign: 'right',
   },
   grid: { gap: spacing.md },
 });
