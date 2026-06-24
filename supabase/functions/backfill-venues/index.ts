@@ -49,26 +49,37 @@ const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
 type TileResult = { count: number } | { error: string };
 
+// Overpass is a shared free resource and rate-limits (429) / sheds load (504)
+// under pressure. Retry those a couple of times with growing backoff before
+// giving up — important for Strategy B, where many users hit it concurrently.
 async function fetchOverpass(b: Bbox): Promise<{ data: unknown } | { error: string }> {
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 30_000);
-  try {
-    const res = await fetch(OVERPASS_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'Anor/1.0 (venue backfill; https://anor.app)',
-      },
-      body: 'data=' + encodeURIComponent(buildOverpassQuery(b)),
-      signal: ctrl.signal,
-    });
-    if (!res.ok) return { error: `overpass ${res.status}` };
-    return { data: await res.json() };
-  } catch (e) {
-    return { error: `overpass fetch: ${e instanceof Error ? e.message : 'failed'}` };
-  } finally {
-    clearTimeout(t);
+  const query = buildOverpassQuery(b);
+  let lastError = 'overpass: unknown';
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 2000 * attempt));
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 30_000);
+    try {
+      const res = await fetch(OVERPASS_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'Anor/1.0 (venue backfill; https://anor.app)',
+        },
+        body: 'data=' + encodeURIComponent(query),
+        signal: ctrl.signal,
+      });
+      if (res.ok) return { data: await res.json() };
+      lastError = `overpass ${res.status}`;
+      // Only 429/503/504 are worth retrying; other statuses are terminal.
+      if (![429, 503, 504].includes(res.status)) return { error: lastError };
+    } catch (e) {
+      lastError = `overpass fetch: ${e instanceof Error ? e.message : 'failed'}`;
+    } finally {
+      clearTimeout(t);
+    }
   }
+  return { error: `${lastError} (after retries)` };
 }
 
 // Fetch one tile (unless cached & fresh and not forced); upsert its venues;
@@ -122,7 +133,7 @@ async function fetchTile(key: string, force: boolean): Promise<TileResult> {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
-  let body: { lat?: number; lng?: number; bbox?: Bbox | number[] };
+  let body: { lat?: number; lng?: number; bbox?: Bbox | number[]; force?: boolean };
   try {
     body = await req.json();
   } catch {
@@ -159,19 +170,23 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Honor the tile cache by default so re-running an import only fetches the
+    // tiles that aren't done yet (e.g. ones a 429 skipped). Pass {force:true} to
+    // refresh tiles inside the refresh window.
+    const force = body.force === true;
     let added = 0;
     let failed = 0;
     let sampleError: string | null = null;
     for (const key of keys) {
-      const r = await fetchTile(key, true);
+      const r = await fetchTile(key, force);
       if ('error' in r) {
         failed++;
         if (!sampleError) sampleError = r.error;
       } else {
         added += r.count;
       }
-      // Be a good Overpass citizen — small gap between tile calls.
-      await new Promise((res) => setTimeout(res, 1000));
+      // Be a good Overpass citizen — gap between tile calls.
+      await new Promise((res) => setTimeout(res, 1500));
     }
     return json({ tiles: keys.length, added, failed, sample_error: sampleError });
   }
