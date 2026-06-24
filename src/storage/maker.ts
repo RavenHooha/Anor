@@ -12,14 +12,6 @@ export type MakerUser = {
   hasThread: boolean;
 };
 
-type MakerUserRow = {
-  id: string;
-  name: string;
-  photo_url: string | null;
-  created_at: string | null;
-  has_thread: boolean;
-};
-
 /**
  * The maker-only user directory. Anor has no global directory for normal users
  * by design; this is the single privileged surface, and it's enforced in the
@@ -37,7 +29,7 @@ export async function listUsersAsMaker(
   });
   if (error) throw error;
   if (!data) return [];
-  return (data as MakerUserRow[]).map((r) => ({
+  return data.map((r) => ({
     id: r.id,
     name: r.name,
     photoUrl: r.photo_url,

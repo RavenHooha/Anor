@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import type { Database } from '../types/database';
 import type { Status } from '../types/status';
 import type { NearbyUser } from '../types/user';
 import type { SubscriptionTier } from '../types/subscription';
@@ -32,7 +33,7 @@ export async function fetchNearby(
   if (error) throw error;
   if (!data) return [];
 
-  return (data as RpcRow[]).filter((r) => r.status !== null).map(mapRow);
+  return data.filter((r) => r.status !== null).map(mapRow);
 }
 
 /**
@@ -47,7 +48,7 @@ export async function fetchCopresence(): Promise<{
 }> {
   const { data, error } = await supabase.rpc('venue_copresence');
   if (error) throw error;
-  const rows = (data as RpcRow[] | null) ?? [];
+  const rows = data ?? [];
   if (rows.length === 0) return { venue: null, users: [] };
   return {
     venue: rows[0]?.venue ?? null,
@@ -77,7 +78,7 @@ export async function fetchMyCheckin(): Promise<{
   }
 }
 
-function mapRow(r: RpcRow): NearbyUser {
+function mapRow(r: NearbyRow): NearbyUser {
   return {
     id: r.id,
     name: r.name,
@@ -101,22 +102,6 @@ function mapRow(r: RpcRow): NearbyUser {
   };
 }
 
-type RpcRow = {
-  id: string;
-  name: string;
-  photo_url: string | null;
-  photos: string[] | null;
-  bio: string | null;
-  interests: string[] | null;
-  connect_prefs: string[] | null;
-  age: number | null;
-  status: string | null;
-  venue: string | null;
-  distance_m: number;
-  created_at: string | null;
-  tier: string | null;
-  is_founding: boolean | null;
-  accent_color: string | null;
-  profile_theme: string | null;
-  profile_background: string | null;
-};
+// Both nearby() and venue_copresence() return this same shape; type the mapper
+// from the generated schema so a column rename breaks the build here.
+type NearbyRow = Database['public']['Functions']['nearby']['Returns'][number];
