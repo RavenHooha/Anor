@@ -10,7 +10,7 @@ import StatusBadge from '../components/StatusBadge';
 import NotificationBell from '../components/NotificationBell';
 import NearbyCard from '../components/NearbyCard';
 import MysteryCard from '../components/MysteryCard';
-import VenueCard from '../components/VenueCard';
+import VenuesNearby from '../components/VenuesNearby';
 import RadiusSelector from '../components/RadiusSelector';
 import VenueEditor from '../components/VenueEditor';
 import LoadingScreen from '../components/LoadingScreen';
@@ -399,19 +399,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {!isFocus && venues.length > 0 && (
-          <View style={styles.venuesSection}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="storefront-outline" size={14} color={colors.textMuted} />
-              <Text style={styles.sectionTitle}>Places nearby</Text>
-            </View>
-            <View style={styles.grid}>
-              {venues.map((v) => (
-                <VenueCard key={v.id} venue={v} />
-              ))}
-            </View>
-          </View>
-        )}
+        {!isFocus && venues.length > 0 && <VenuesNearby venues={venues} />}
       </ScrollView>
     </SafeAreaView>
   );
@@ -613,7 +601,6 @@ const styles = StyleSheet.create({
   checkOutText: { ...typography.caption, color: colors.textMuted, fontSize: 12 },
   hereSection: { gap: spacing.sm, marginTop: spacing.md },
   hereTitle: { color: colors.primary },
-  venuesSection: { gap: spacing.sm, marginTop: spacing.sm },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
