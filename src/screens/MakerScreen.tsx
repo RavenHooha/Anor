@@ -7,7 +7,6 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
@@ -22,6 +21,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, spacing, radius, typography } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 import { listUsersAsMaker, startMakerThread, type MakerUser } from '../storage/maker';
+import { showDialog } from '../components/AppDialog';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Maker'>;
 
@@ -49,7 +49,7 @@ export default function MakerScreen({ navigation }: Props) {
       const rows = await listUsersAsMaker(term.trim() || null);
       setUsers(rows);
     } catch (e) {
-      Alert.alert('Could not load people', e instanceof Error ? e.message : 'Try again.');
+      showDialog('Could not load people', e instanceof Error ? e.message : 'Try again.');
     } finally {
       setLoading(false);
     }
@@ -80,7 +80,7 @@ export default function MakerScreen({ navigation }: Props) {
       closeComposer();
       navigation.navigate('Chat', { threadId });
     } catch (e) {
-      Alert.alert('Could not send', e instanceof Error ? e.message : 'Try again.');
+      showDialog('Could not send', e instanceof Error ? e.message : 'Try again.');
     } finally {
       setSending(false);
     }

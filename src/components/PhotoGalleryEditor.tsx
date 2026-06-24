@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { View, Text, Image, Pressable, Modal, StyleSheet, Alert } from 'react-native';
+import { View, Text, Image, Pressable, Modal, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { colors, spacing, radius, typography } from '../theme';
+import { showDialog } from './AppDialog';
 import { MAX_PHOTOS, uploadProfilePhoto } from '../storage/profile';
 
 type Props = {
@@ -32,12 +33,12 @@ export default function PhotoGalleryEditor({ photos, onChange }: Props) {
       const url = await uploadProfilePhoto(result.assets[0].uri);
       onChange([...photos, url]);
     } catch (e) {
-      Alert.alert('Upload failed', e instanceof Error ? e.message : 'Try again.');
+      showDialog('Upload failed', e instanceof Error ? e.message : 'Try again.');
     }
   };
 
   const removeAt = (index: number) => {
-    Alert.alert('Remove this photo?', undefined, [
+    showDialog('Remove this photo?', undefined, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Remove',

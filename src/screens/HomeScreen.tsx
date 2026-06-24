@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,6 +14,7 @@ import VenueCard from '../components/VenueCard';
 import RadiusSelector from '../components/RadiusSelector';
 import VenueEditor from '../components/VenueEditor';
 import LoadingScreen from '../components/LoadingScreen';
+import { showDialog } from '../components/AppDialog';
 import { loadStatus, saveStatus } from '../storage/status';
 import { loadRadius, saveRadius } from '../storage/radius';
 import {
@@ -143,20 +144,21 @@ export default function HomeScreen() {
   const onCheckout = () => {
     if (!checkedInVenue) return;
     const where = checkedInVenue;
-    Alert.alert(
+    showDialog(
       `Check out of ${where}?`,
       "You'll stop showing as here. We won't check you back in until you leave.",
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Check out',
+          style: 'destructive',
           onPress: async () => {
             setCheckedInVenue(null); // optimistic
             try {
               await checkoutVenue();
             } catch (e) {
               setCheckedInVenue(where);
-              Alert.alert('Could not check out', e instanceof Error ? e.message : 'Try again.');
+              showDialog('Could not check out', e instanceof Error ? e.message : 'Try again.');
             }
           },
         },

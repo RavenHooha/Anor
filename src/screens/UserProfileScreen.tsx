@@ -5,7 +5,6 @@ import {
   Pressable,
   StyleSheet,
   ScrollView,
-  Alert,
   DeviceEventEmitter,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
 import { STATUS_BY_ID } from '../types/status';
 import MessageComposerModal from '../components/MessageComposerModal';
+import { showDialog } from '../components/AppDialog';
 import ReportUserModal from '../components/ReportUserModal';
 import InterestChips from '../components/InterestChips';
 import ConnectPrefChips from '../components/ConnectPrefChips';
@@ -203,7 +203,7 @@ export default function UserProfileScreen({ route, navigation }: Props) {
         <Pressable
           hitSlop={8}
           onPress={() => {
-            Alert.alert(
+            showDialog(
               `Block ${user.name}?`,
               `You won't see ${user.name} in your nearby feed or messages, and they won't see you. This can be undone later.`,
               [
@@ -218,7 +218,7 @@ export default function UserProfileScreen({ route, navigation }: Props) {
                     blockUser(user.id)
                       .then(() => DeviceEventEmitter.emit('blockChanged'))
                       .catch((e) => {
-                        Alert.alert(
+                        showDialog(
                           'Block failed',
                           e instanceof Error ? e.message : 'Try again.',
                         );
@@ -251,7 +251,7 @@ export default function UserProfileScreen({ route, navigation }: Props) {
         onCancel={() => setReportOpen(false)}
         onSubmitted={() => {
           setReportOpen(false);
-          Alert.alert(
+          showDialog(
             'Report submitted',
             'Thanks — we\'ll review it. You may want to block this person too.',
           );

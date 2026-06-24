@@ -27,6 +27,7 @@ import {
 } from './src/lib/analytics';
 import { colors } from './src/theme';
 import UpdateOverlay from './src/components/UpdateOverlay';
+import { DialogHost } from './src/components/AppDialog';
 import {
   getDiscoverablePref,
   startBackgroundPresence,
@@ -205,6 +206,7 @@ function App() {
             <View style={{ flex: 1, backgroundColor: colors.background }} />
           )}
           {updating && <UpdateOverlay />}
+          <DialogHost />
         </KeyboardProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

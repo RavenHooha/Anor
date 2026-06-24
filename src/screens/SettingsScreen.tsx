@@ -6,7 +6,6 @@ import {
   StyleSheet,
   ScrollView,
   Switch,
-  Alert,
   Linking,
   Share,
   Platform,
@@ -16,6 +15,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
+import { showDialog } from '../components/AppDialog';
 import {
   getMyProfile,
   setHideMessagePreview,
@@ -111,7 +111,7 @@ export default function SettingsScreen() {
         if (err) {
           setDiscoverable(false);
           await setDiscoverablePref(false);
-          Alert.alert('Could not turn on', err);
+          showDialog('Could not turn on', err);
         }
       } else {
         await stopBackgroundPresence();
@@ -119,7 +119,7 @@ export default function SettingsScreen() {
     } catch (e) {
       setDiscoverable(!next);
       await setDiscoverablePref(!next);
-      Alert.alert('Could not save', e instanceof Error ? e.message : 'Try again.');
+      showDialog('Could not save', e instanceof Error ? e.message : 'Try again.');
     } finally {
       setSavingDiscoverable(false);
       getBgBreadcrumb().then(setCrumb);
@@ -155,7 +155,7 @@ export default function SettingsScreen() {
       await setHideMessagePreview(next);
     } catch (e) {
       setProfile({ ...profile, hideMessagePreview: !next });
-      Alert.alert('Could not save', e instanceof Error ? e.message : 'Try again.');
+      showDialog('Could not save', e instanceof Error ? e.message : 'Try again.');
     } finally {
       setSavingPreview(false);
     }
@@ -170,7 +170,7 @@ export default function SettingsScreen() {
       await setAnalyticsOptedInClient(next);
     } catch (e) {
       setProfile({ ...profile, analyticsOptedIn: !next });
-      Alert.alert('Could not save', e instanceof Error ? e.message : 'Try again.');
+      showDialog('Could not save', e instanceof Error ? e.message : 'Try again.');
     } finally {
       setSavingAnalytics(false);
     }
@@ -186,14 +186,14 @@ export default function SettingsScreen() {
         title: 'Anor data export',
       });
     } catch (e) {
-      Alert.alert('Export failed', e instanceof Error ? e.message : 'Try again.');
+      showDialog('Export failed', e instanceof Error ? e.message : 'Try again.');
     } finally {
       setExporting(false);
     }
   };
 
   const onDeleteAccount = () => {
-    Alert.alert(
+    showDialog(
       'Delete your Anor account?',
       'This permanently removes your profile, photos, messages, blocks, and check-ins. This cannot be undone.',
       [
@@ -202,7 +202,7 @@ export default function SettingsScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            Alert.alert(
+            showDialog(
               'Really delete?',
               'Last chance — there is no recovery after this.',
               [
@@ -215,7 +215,7 @@ export default function SettingsScreen() {
                       await deleteMyAccount();
                       await supabase.auth.signOut().catch(() => {});
                     } catch (e) {
-                      Alert.alert(
+                      showDialog(
                         'Delete failed',
                         e instanceof Error ? e.message : 'Try again.',
                       );
