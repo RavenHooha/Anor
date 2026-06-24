@@ -12,6 +12,14 @@ import {
   DEVICE_STALE_MS,
 } from './constants';
 
+// Native advertise-tuning constants exposed by the advertiser module on Android.
+// They aren't in the library's (minimal) JS types, so reach them through a typed
+// view rather than `any`.
+const ADV = BLEAdvertiser as unknown as {
+  ADVERTISE_MODE_LOW_LATENCY: number;
+  ADVERTISE_TX_POWER_HIGH: number;
+};
+
 export type SignalStrength = 'strong' | 'medium' | 'weak';
 
 export type BleNearbyDevice = {
@@ -87,7 +95,7 @@ function broadcast() {
 }
 
 export async function startBle(): Promise<void> {
-  if (started || Platform.OS !== 'android') return;
+  if (started) return;
   started = true;
 
   try {
@@ -107,6 +115,17 @@ export async function startBle(): Promise<void> {
       includeDeviceName: false,
       includeTxPowerLevel: false,
       connectable: false,
+      // Give discovery its best chance: advertise as often (LOW_LATENCY) and as
+      // loudly (TX_POWER_HIGH) as the radio allows — more frequent, longer-range
+      // broadcasts mean peers detect us more often. Costs battery, which is
+      // acceptable for an opt-in proximity feature. Android-only knobs; iOS
+      // controls its own advertising and ignores them.
+      ...(Platform.OS === 'android'
+        ? {
+            advertiseMode: ADV.ADVERTISE_MODE_LOW_LATENCY,
+            txPowerLevel: ADV.ADVERTISE_TX_POWER_HIGH,
+          }
+        : {}),
     });
     advertising = true;
   } catch (e) {
@@ -196,7 +215,7 @@ export async function enableBluetooth(): Promise<void> {
  * while the feed stays permanently empty with no prompt to fix it.
  */
 export function observeBleState(cb: (on: boolean) => void): () => void {
-  if (Platform.OS !== 'android') return () => {};
+  if (Platform.OS !== 'android' && Platform.OS !== 'ios') return () => {};
   const sub = BleManager.onDidUpdateState((event) => {
     cb(event.state === BleState.On);
   });

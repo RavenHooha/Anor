@@ -34,7 +34,7 @@ export function useBleNearby(): {
   const bleOnRef = useRef(true);
 
   const begin = async () => {
-    if (Platform.OS !== 'android') {
+    if (Platform.OS !== 'android' && Platform.OS !== 'ios') {
       setStatus('unsupported');
       return;
     }

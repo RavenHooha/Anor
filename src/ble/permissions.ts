@@ -3,6 +3,11 @@ import { Platform, PermissionsAndroid } from 'react-native';
 export type BlePermissionsResult = 'granted' | 'denied' | 'unsupported';
 
 export async function requestBlePermissions(): Promise<BlePermissionsResult> {
+  // iOS has no runtime BLE permission request — the system prompts automatically
+  // on first CoreBluetooth use, gated by the NSBluetoothAlwaysUsageDescription
+  // Info.plist string. Treat as granted and let the OS prompt; a denial surfaces
+  // later as a non-"on" adapter state (handled as bluetoothOff).
+  if (Platform.OS === 'ios') return 'granted';
   if (Platform.OS !== 'android') return 'unsupported';
 
   const apiLevel = Platform.Version as number;
