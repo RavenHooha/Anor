@@ -166,6 +166,7 @@ export type Database = {
           venue: string | null
           venue_id: string | null
           venue_location: unknown
+          venue_optout_id: string | null
           venue_since: string | null
         }
         Insert: {
@@ -177,6 +178,7 @@ export type Database = {
           venue?: string | null
           venue_id?: string | null
           venue_location?: unknown
+          venue_optout_id?: string | null
           venue_since?: string | null
         }
         Update: {
@@ -188,6 +190,7 @@ export type Database = {
           venue?: string | null
           venue_id?: string | null
           venue_location?: unknown
+          venue_optout_id?: string | null
           venue_since?: string | null
         }
         Relationships: [
@@ -933,6 +936,7 @@ export type Database = {
         Returns: undefined
       }
       check_nearby_alerts: { Args: never; Returns: number }
+      checkout_venue: { Args: never; Returns: undefined }
       cleanup_old_audit_log: { Args: never; Returns: number }
       cleanup_old_messages: { Args: never; Returns: number }
       cleanup_reviewed_reports: { Args: never; Returns: number }

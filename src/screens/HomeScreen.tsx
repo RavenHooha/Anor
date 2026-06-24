@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -24,7 +24,7 @@ import {
   RADIUS_PRESETS,
 } from '../data/nearby';
 import { fetchNearbyVenues, type NearbyVenue } from '../data/venues';
-import { getMyVenue } from '../data/venue';
+import { getMyVenue, checkoutVenue } from '../data/venue';
 import { setNearbyAlert, clearNearbyAlert, getNearbyAlert } from '../data/alerts';
 import { createOrGetThread, listMyThreads } from '../storage/threads';
 import { useBleNearby } from '../ble/useBleNearby';
@@ -140,6 +140,30 @@ export default function HomeScreen() {
     saveRadius(m).catch(() => {});
   };
 
+  const onCheckout = () => {
+    if (!checkedInVenue) return;
+    const where = checkedInVenue;
+    Alert.alert(
+      `Check out of ${where}?`,
+      "You'll stop showing as here. We won't check you back in until you leave.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Check out',
+          onPress: async () => {
+            setCheckedInVenue(null); // optimistic
+            try {
+              await checkoutVenue();
+            } catch (e) {
+              setCheckedInVenue(where);
+              Alert.alert('Could not check out', e instanceof Error ? e.message : 'Try again.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const onToggleAlert = async () => {
     if (savingAlert || !coords) return;
     const next = !alertActive;
@@ -223,12 +247,21 @@ export default function HomeScreen() {
         <StatusSelector current={status} onChange={onChange} />
 
         {checkedInVenue && !isFocus ? (
-          <View style={styles.checkedInChip}>
+          <Pressable
+            onPress={onCheckout}
+            accessibilityRole="button"
+            accessibilityLabel={`Checked in at ${checkedInVenue}. Tap to check out.`}
+            style={({ pressed }) => [styles.checkedInChip, pressed && { opacity: 0.7 }]}
+          >
             <Ionicons name="location" size={16} color={colors.primary} />
             <Text style={styles.checkedInText} numberOfLines={1}>
               Checked in at {checkedInVenue}
             </Text>
-          </View>
+            <View style={styles.checkOutTag}>
+              <Ionicons name="exit-outline" size={13} color={colors.textMuted} />
+              <Text style={styles.checkOutText}>Check out</Text>
+            </View>
+          </Pressable>
         ) : (
           <VenueEditor
             venue={venue}
@@ -547,8 +580,18 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textPrimary,
     fontWeight: '600',
-    maxWidth: 240,
+    maxWidth: 200,
   },
+  checkOutTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginLeft: spacing.xs,
+    paddingLeft: spacing.xs,
+    borderLeftWidth: 1,
+    borderLeftColor: colors.border,
+  },
+  checkOutText: { ...typography.caption, color: colors.textMuted, fontSize: 12 },
   hereSection: { gap: spacing.sm, marginTop: spacing.md },
   hereTitle: { color: colors.primary },
   venuesSection: { gap: spacing.sm, marginTop: spacing.sm },

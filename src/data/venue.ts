@@ -15,6 +15,15 @@ export async function clearVenue(): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * Unified "go quiet here": drops the auto co-presence and the manual label, and
+ * suppresses auto re-check-in at the current venue until the user leaves it.
+ */
+export async function checkoutVenue(): Promise<void> {
+  const { error } = await supabase.rpc('checkout_venue');
+  if (error) throw error;
+}
+
 export async function getMyVenue(): Promise<string | null> {
   const uid = await currentUserId();
   if (!uid) return null;
