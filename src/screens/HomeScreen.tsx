@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -24,7 +24,7 @@ import {
   DEFAULT_RADIUS_M,
   RADIUS_PRESETS,
 } from '../data/nearby';
-import { fetchNearbyVenues, type NearbyVenue } from '../data/venues';
+import { fetchNearbyVenues, ensureVenuesNearby, type NearbyVenue } from '../data/venues';
 import { getMyVenue, checkoutVenue } from '../data/venue';
 import { setNearbyAlert, clearNearbyAlert, getNearbyAlert } from '../data/alerts';
 import { createOrGetThread, listMyThreads } from '../storage/threads';
@@ -124,6 +124,23 @@ export default function HomeScreen() {
     if (!coords) return;
     reverseGeocodeArea(coords).then(setAreaNames);
   }, [coords]);
+
+  // Populate venues for the user's area from OpenStreetMap (Strategy B). The
+  // call is throttled per-tile client-side and cache-gated server-side, so this
+  // is cheap to fire on coord changes; when it actually adds venues, refresh
+  // the list so they appear without waiting for the next interval tick.
+  const ensuringVenuesRef = useRef(false);
+  useEffect(() => {
+    if (!coords || ensuringVenuesRef.current) return;
+    ensuringVenuesRef.current = true;
+    ensureVenuesNearby(coords)
+      .then((added) => {
+        if (added) loadNearby();
+      })
+      .finally(() => {
+        ensuringVenuesRef.current = false;
+      });
+  }, [coords, loadNearby]);
 
   const onRefresh = async () => {
     setRefreshing(true);
