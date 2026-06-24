@@ -1,0 +1,179 @@
+// backfill-venues — populate the `venues` table from OpenStreetMap.
+//
+// Two callers, one primitive ("fetch a tile"):
+//   • Strategy B (lazy):  body { lat, lng }      — any authed user; fetches the
+//     single tile they're in, cache-gated so each tile hits Overpass at most
+//     once per refresh window no matter how many users pass through.
+//   • Strategy A (bulk):  body { bbox }          — admin only; fans out over
+//     every tile in the box and force-refreshes them (seed a launch town).
+//
+// Only this function (service role) writes OSM venues. Admin/partner rows
+// (source='admin') are never touched — the upsert conflict key is (osm_type,
+// osm_id), which is null for admin rows.
+//
+// Setup:
+//   supabase functions deploy backfill-venues
+// (Keep JWT verification ON — we need the caller's identity for the admin gate.)
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  buildOverpassQuery,
+  parseOverpass,
+  tileBboxFromKey,
+  tileKey,
+  tileKeysInBbox,
+  type Bbox,
+} from '../_shared/osm.ts';
+
+const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+const REFRESH_MS = 60 * 24 * 60 * 60 * 1000; // 60 days
+const MAX_TILES_PER_CALL = 40; // bound an admin bbox import to one safe batch
+
+const cors = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...cors, 'Content-Type': 'application/json' },
+  });
+}
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+
+async function fetchOverpass(b: Bbox): Promise<unknown | null> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 30_000);
+  try {
+    const res = await fetch(OVERPASS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'data=' + encodeURIComponent(buildOverpassQuery(b)),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) return null; // Overpass busy/rate-limited — caller leaves the tile unrecorded so it retries
+    return await res.json();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+// Fetch one tile (unless cached & fresh and not forced); upsert its venues;
+// record the tile. Returns how many venues were written, or null if Overpass
+// was unavailable (so the tile is NOT marked fetched).
+async function fetchTile(key: string, force: boolean): Promise<number | null> {
+  if (!force) {
+    const { data: tile } = await admin
+      .from('venue_tiles')
+      .select('fetched_at')
+      .eq('tile_key', key)
+      .maybeSingle();
+    if (tile && Date.now() - new Date(tile.fetched_at).getTime() < REFRESH_MS) {
+      return 0; // fresh cache — nothing to do
+    }
+  }
+
+  const data = await fetchOverpass(tileBboxFromKey(key));
+  if (data === null) return null;
+
+  const venues = parseOverpass(data as { elements?: [] });
+  if (venues.length > 0) {
+    const rows = venues.map((v) => ({
+      source: 'osm',
+      osm_type: v.osm_type,
+      osm_id: v.osm_id,
+      name: v.name,
+      category: v.category,
+      location: `POINT(${v.lng} ${v.lat})`,
+      address: v.address,
+      active: true,
+      source_synced_at: new Date().toISOString(),
+    }));
+    const { error } = await admin
+      .from('venues')
+      .upsert(rows, { onConflict: 'osm_type,osm_id' });
+    if (error) return null; // don't record the tile if the write failed
+  }
+
+  await admin
+    .from('venue_tiles')
+    .upsert(
+      { tile_key: key, fetched_at: new Date().toISOString(), venue_count: venues.length },
+      { onConflict: 'tile_key' },
+    );
+  return venues.length;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+
+  let body: { lat?: number; lng?: number; bbox?: Bbox | number[] };
+  try {
+    body = await req.json();
+  } catch {
+    return json({ error: 'bad json' }, 400);
+  }
+
+  // ── Strategy A: admin bbox import ──────────────────────────────────────
+  if (body.bbox) {
+    // Allowed for an in-app admin (their JWT passes is_admin) OR a direct call
+    // bearing the service-role key (the one-off "seed this town" from a dev
+    // machine). The service key is a strong secret, so it's a fine admin proof.
+    const authHeader = req.headers.get('Authorization') ?? '';
+    const token = authHeader.replace(/^Bearer\s+/i, '');
+    let allowed = token === SERVICE_KEY;
+    if (!allowed) {
+      const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: isAdmin } = await userClient.rpc('is_admin');
+      allowed = !!isAdmin;
+    }
+    if (!allowed) return json({ error: 'admin only' }, 403);
+
+    const raw = body.bbox;
+    const b: Bbox = Array.isArray(raw)
+      ? { south: raw[0], west: raw[1], north: raw[2], east: raw[3] }
+      : raw;
+
+    const keys = tileKeysInBbox(b);
+    if (keys.length > MAX_TILES_PER_CALL) {
+      return json(
+        { error: `bbox too large: ${keys.length} tiles (max ${MAX_TILES_PER_CALL}). Split it.` },
+        400,
+      );
+    }
+
+    let added = 0;
+    let unavailable = 0;
+    for (const key of keys) {
+      const n = await fetchTile(key, true);
+      if (n === null) unavailable++;
+      else added += n;
+      // Be a good Overpass citizen — small gap between tile calls.
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+    return json({ tiles: keys.length, added, unavailable });
+  }
+
+  // ── Strategy B: per-user tile ──────────────────────────────────────────
+  if (typeof body.lat === 'number' && typeof body.lng === 'number') {
+    const key = tileKey(body.lat, body.lng);
+    const n = await fetchTile(key, false);
+    if (n === null) return json({ added: 0, cached: false, unavailable: true });
+    // n === 0 from the fresh-cache short-circuit; we can't distinguish "cached"
+    // from "fetched 0 venues" without another read, but the client only cares
+    // whether new venues likely appeared, so report added.
+    return json({ added: n, cached: false });
+  }
+
+  return json({ error: 'provide {lat,lng} or {bbox}' }, 400);
+});

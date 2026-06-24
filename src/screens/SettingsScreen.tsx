@@ -389,6 +389,15 @@ export default function SettingsScreen() {
           <Ionicons name="open-outline" size={16} color={colors.textMuted} />
         </Pressable>
 
+        {/* ODbL attribution for OSM-sourced venue data (required). */}
+        <Pressable
+          onPress={() => Linking.openURL('https://www.openstreetmap.org/copyright')}
+          style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.6 }]}
+        >
+          <Text style={styles.linkLabel}>Map data © OpenStreetMap</Text>
+          <Ionicons name="open-outline" size={16} color={colors.textMuted} />
+        </Pressable>
+
         <Pressable
           onPress={onExportData}
           disabled={exporting}
