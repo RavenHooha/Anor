@@ -47,29 +47,35 @@ const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 
 const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
-async function fetchOverpass(b: Bbox): Promise<unknown | null> {
+type TileResult = { count: number } | { error: string };
+
+async function fetchOverpass(b: Bbox): Promise<{ data: unknown } | { error: string }> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 30_000);
   try {
     const res = await fetch(OVERPASS_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'Anor/1.0 (venue backfill; https://anor.app)',
+      },
       body: 'data=' + encodeURIComponent(buildOverpassQuery(b)),
       signal: ctrl.signal,
     });
-    if (!res.ok) return null; // Overpass busy/rate-limited — caller leaves the tile unrecorded so it retries
-    return await res.json();
-  } catch {
-    return null;
+    if (!res.ok) return { error: `overpass ${res.status}` };
+    return { data: await res.json() };
+  } catch (e) {
+    return { error: `overpass fetch: ${e instanceof Error ? e.message : 'failed'}` };
   } finally {
     clearTimeout(t);
   }
 }
 
 // Fetch one tile (unless cached & fresh and not forced); upsert its venues;
-// record the tile. Returns how many venues were written, or null if Overpass
-// was unavailable (so the tile is NOT marked fetched).
-async function fetchTile(key: string, force: boolean): Promise<number | null> {
+// record the tile. Returns the venue count, or a specific error string so the
+// caller can surface *why* a tile failed (Overpass vs DB write) instead of a
+// blanket "unavailable".
+async function fetchTile(key: string, force: boolean): Promise<TileResult> {
   if (!force) {
     const { data: tile } = await admin
       .from('venue_tiles')
@@ -77,14 +83,14 @@ async function fetchTile(key: string, force: boolean): Promise<number | null> {
       .eq('tile_key', key)
       .maybeSingle();
     if (tile && Date.now() - new Date(tile.fetched_at).getTime() < REFRESH_MS) {
-      return 0; // fresh cache — nothing to do
+      return { count: 0 }; // fresh cache — nothing to do
     }
   }
 
-  const data = await fetchOverpass(tileBboxFromKey(key));
-  if (data === null) return null;
+  const fetched = await fetchOverpass(tileBboxFromKey(key));
+  if ('error' in fetched) return { error: fetched.error };
 
-  const venues = parseOverpass(data as { elements?: [] });
+  const venues = parseOverpass(fetched.data as { elements?: [] });
   if (venues.length > 0) {
     const rows = venues.map((v) => ({
       source: 'osm',
@@ -100,16 +106,17 @@ async function fetchTile(key: string, force: boolean): Promise<number | null> {
     const { error } = await admin
       .from('venues')
       .upsert(rows, { onConflict: 'osm_type,osm_id' });
-    if (error) return null; // don't record the tile if the write failed
+    if (error) return { error: `db venues: ${error.message}` };
   }
 
-  await admin
+  const { error: tErr } = await admin
     .from('venue_tiles')
     .upsert(
       { tile_key: key, fetched_at: new Date().toISOString(), venue_count: venues.length },
       { onConflict: 'tile_key' },
     );
-  return venues.length;
+  if (tErr) return { error: `db tiles: ${tErr.message}` };
+  return { count: venues.length };
 }
 
 Deno.serve(async (req) => {
@@ -153,26 +160,28 @@ Deno.serve(async (req) => {
     }
 
     let added = 0;
-    let unavailable = 0;
+    let failed = 0;
+    let sampleError: string | null = null;
     for (const key of keys) {
-      const n = await fetchTile(key, true);
-      if (n === null) unavailable++;
-      else added += n;
+      const r = await fetchTile(key, true);
+      if ('error' in r) {
+        failed++;
+        if (!sampleError) sampleError = r.error;
+      } else {
+        added += r.count;
+      }
       // Be a good Overpass citizen — small gap between tile calls.
-      await new Promise((r) => setTimeout(r, 1000));
+      await new Promise((res) => setTimeout(res, 1000));
     }
-    return json({ tiles: keys.length, added, unavailable });
+    return json({ tiles: keys.length, added, failed, sample_error: sampleError });
   }
 
   // ── Strategy B: per-user tile ──────────────────────────────────────────
   if (typeof body.lat === 'number' && typeof body.lng === 'number') {
     const key = tileKey(body.lat, body.lng);
-    const n = await fetchTile(key, false);
-    if (n === null) return json({ added: 0, cached: false, unavailable: true });
-    // n === 0 from the fresh-cache short-circuit; we can't distinguish "cached"
-    // from "fetched 0 venues" without another read, but the client only cares
-    // whether new venues likely appeared, so report added.
-    return json({ added: n, cached: false });
+    const r = await fetchTile(key, false);
+    if ('error' in r) return json({ added: 0, unavailable: true, error: r.error });
+    return json({ added: r.count });
   }
 
   return json({ error: 'provide {lat,lng} or {bbox}' }, 400);
