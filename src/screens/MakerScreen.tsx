@@ -6,13 +6,16 @@ import {
   Pressable,
   StyleSheet,
   FlatList,
-  Modal,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
+import Animated, {
+  useAnimatedStyle,
+  FadeIn,
+  SlideInDown,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import Avatar from '../components/Avatar';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -32,6 +35,13 @@ export default function MakerScreen({ navigation }: Props) {
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const insets = useSafeAreaInsets();
+  const { height: kbHeight } = useReanimatedKeyboardAnimation();
+  // Lift the composer by the real keyboard height — rendered in-tree (not an RN
+  // Modal) so the keyboard-height hook measures correctly on Android.
+  const liftStyle = useAnimatedStyle(() => ({
+    marginBottom: Math.abs(kbHeight.value),
+  }));
 
   const load = useCallback(async (term: string) => {
     setLoading(true);
@@ -135,65 +145,61 @@ export default function MakerScreen({ navigation }: Props) {
         />
       )}
 
-      <Modal
-        visible={target !== null}
-        animationType="slide"
-        transparent
-        onRequestClose={closeComposer}
-      >
-        <Pressable style={styles.backdrop} onPress={closeComposer} />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.sheetWrap}
-        >
-          <View style={styles.sheet}>
-            <View style={styles.handle} />
-            <Text style={styles.sheetTitle}>Message {target?.name || 'this person'}</Text>
-            <Text style={styles.sheetHint}>
-              Sent as the maker — lands in their inbox directly, with your verified badge.
-            </Text>
-            <TextInput
-              value={body}
-              onChangeText={(t) => setBody(t.slice(0, BODY_LIMIT))}
-              placeholder="Write your message…"
-              placeholderTextColor={colors.textMuted}
-              style={styles.input}
-              multiline
-              autoFocus
-              maxLength={BODY_LIMIT}
-              accessibilityLabel="Message body"
-            />
-            <Text style={styles.counter}>
-              {body.length}/{BODY_LIMIT}
-            </Text>
-            <View style={styles.actions}>
-              <Pressable
-                onPress={closeComposer}
-                accessibilityRole="button"
-                accessibilityLabel="Cancel"
-                style={({ pressed }) => [styles.btn, styles.btnGhost, pressed && styles.btnGhostPressed]}
-              >
-                <Text style={styles.btnGhostLabel}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                disabled={!body.trim() || sending}
-                onPress={onSend}
-                accessibilityRole="button"
-                accessibilityLabel="Send message"
-                accessibilityState={{ disabled: !body.trim() || sending }}
-                style={({ pressed }) => [
-                  styles.btn,
-                  styles.btnPrimary,
-                  (!body.trim() || sending) && styles.btnDisabled,
-                  pressed && body.trim() && !sending && styles.btnPrimaryPressed,
-                ]}
-              >
-                <Text style={styles.btnPrimaryLabel}>{sending ? 'Sending…' : 'Send'}</Text>
-              </Pressable>
+      {target !== null && (
+        <View style={styles.overlay}>
+          <Animated.View entering={FadeIn.duration(150)} style={styles.backdropWrap}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={closeComposer} />
+          </Animated.View>
+          <Animated.View entering={SlideInDown.duration(200)} style={liftStyle}>
+            <View style={[styles.sheet, { paddingBottom: spacing.xl + insets.bottom }]}>
+              <View style={styles.handle} />
+              <Text style={styles.sheetTitle}>Message {target?.name || 'this person'}</Text>
+              <Text style={styles.sheetHint}>
+                Sent as the maker — lands in their inbox directly, with your verified badge.
+              </Text>
+              <TextInput
+                value={body}
+                onChangeText={(t) => setBody(t.slice(0, BODY_LIMIT))}
+                placeholder="Write your message…"
+                placeholderTextColor={colors.textMuted}
+                style={styles.input}
+                multiline
+                autoFocus
+                maxLength={BODY_LIMIT}
+                accessibilityLabel="Message body"
+              />
+              <Text style={styles.counter}>
+                {body.length}/{BODY_LIMIT}
+              </Text>
+              <View style={styles.actions}>
+                <Pressable
+                  onPress={closeComposer}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel"
+                  style={({ pressed }) => [styles.btn, styles.btnGhost, pressed && styles.btnGhostPressed]}
+                >
+                  <Text style={styles.btnGhostLabel}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  disabled={!body.trim() || sending}
+                  onPress={onSend}
+                  accessibilityRole="button"
+                  accessibilityLabel="Send message"
+                  accessibilityState={{ disabled: !body.trim() || sending }}
+                  style={({ pressed }) => [
+                    styles.btn,
+                    styles.btnPrimary,
+                    (!body.trim() || sending) && styles.btnDisabled,
+                    pressed && body.trim() && !sending && styles.btnPrimaryPressed,
+                  ]}
+                >
+                  <Text style={styles.btnPrimaryLabel}>{sending ? 'Sending…' : 'Send'}</Text>
+                </Pressable>
+              </View>
             </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+          </Animated.View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -234,8 +240,16 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, gap: 2 },
   name: { ...typography.body, color: colors.textPrimary, fontWeight: '500' },
   rowHint: { ...typography.caption, color: colors.textMuted },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
-  sheetWrap: { flex: 1, justifyContent: 'flex-end' },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    zIndex: 50,
+    elevation: 50,
+  },
+  backdropWrap: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
   sheet: {
     backgroundColor: colors.surface,
     borderTopLeftRadius: radius.lg,
