@@ -15,6 +15,38 @@ const KIND_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   update: 'information-circle',
 };
 
+// Per-category glyph so the "Places nearby" list is scannable at a glance
+// instead of a wall of identical storefront icons. Keys are lowercased category
+// labels (see the OSM tag→category map in functions/_shared/osm.ts); anything
+// unmapped falls back to a generic storefront.
+const CATEGORY_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
+  cafe: 'cafe',
+  bar: 'wine',
+  pub: 'beer',
+  restaurant: 'restaurant',
+  food: 'fast-food',
+  bakery: 'cafe',
+  cinema: 'film',
+  theatre: 'musical-notes',
+  nightlife: 'musical-notes',
+  arts: 'color-palette',
+  community: 'people',
+  library: 'library',
+  coworking: 'briefcase',
+  market: 'basket',
+  bookshop: 'book',
+  gym: 'barbell',
+  sports: 'basketball',
+  dance: 'musical-notes',
+  museum: 'business',
+  gallery: 'color-palette',
+};
+
+function iconForCategory(category: string | null): keyof typeof Ionicons.glyphMap {
+  if (!category) return 'storefront';
+  return CATEGORY_ICON[category.toLowerCase()] ?? 'storefront';
+}
+
 export default function VenueCard({ venue }: { venue: NearbyVenue }) {
   const meta = [venue.category, formatDistance(venue.distanceM)]
     .filter(Boolean)
@@ -24,7 +56,7 @@ export default function VenueCard({ venue }: { venue: NearbyVenue }) {
     <View style={styles.card}>
       <View style={styles.head}>
         <View style={styles.iconWrap}>
-          <Ionicons name="storefront" size={18} color={colors.highlight} />
+          <Ionicons name={iconForCategory(venue.category)} size={18} color={colors.highlight} />
         </View>
         <View style={styles.headText}>
           <Text style={styles.name} numberOfLines={1}>
