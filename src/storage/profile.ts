@@ -1,10 +1,14 @@
 import { supabase } from '../lib/supabase';
 import { currentUserId, requireUserId } from '../lib/session';
+import type { Database } from '../types/database';
 import {
   NO_SUPPORTER,
   type SupporterInfo,
   type SubscriptionTier,
 } from '../types/subscription';
+
+type ProfileInsert = Database['public']['Tables']['profiles']['Insert'];
+type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
 
 export type Profile = {
   id: string;
@@ -93,7 +97,7 @@ export async function setProfileCosmetics(input: {
   profileBackground?: string | null;
 }): Promise<void> {
   const userId = await requireUserId();
-  const row: Record<string, unknown> = {};
+  const row: ProfileUpdate = {};
   if (input.accentColor !== undefined) row.accent_color = input.accentColor;
   if (input.profileBackground !== undefined)
     row.profile_background = input.profileBackground;
@@ -163,7 +167,7 @@ export async function upsertMyProfile(input: {
 }): Promise<Profile> {
   const userId = await requireUserId();
 
-  const row: Record<string, unknown> = {
+  const row: ProfileInsert = {
     id: userId,
     name: input.name,
     bio: input.bio,

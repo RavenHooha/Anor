@@ -27,8 +27,8 @@ export async function reportUser(
   const { error } = await supabase.rpc('report_user', {
     reported: reportedId,
     reason,
-    context_thread: contextThreadId,
-    notes: trimmedNotes,
+    context_thread: contextThreadId ?? undefined,
+    notes: trimmedNotes ?? undefined,
   });
   if (error) throw error;
 }

@@ -43,3 +43,7 @@ yarn-error.*
 
 # Android emulator bug reports
 bugreport-*/
+
+# Supabase CLI scratch (linked-project temp + branch state)
+supabase/.temp/
+supabase/.branches/
