@@ -12,12 +12,7 @@ export async function listMyBlocks(): Promise<BlockedUser[]> {
   const { data, error } = await supabase.rpc('list_my_blocks');
   if (error) throw error;
   if (!data) return [];
-  return (data as Array<{
-    user_id: string;
-    name: string;
-    photo_url: string | null;
-    blocked_at: string;
-  }>).map((r) => ({
+  return data.map((r) => ({
     userId: r.user_id,
     name: r.name,
     photoUrl: r.photo_url,

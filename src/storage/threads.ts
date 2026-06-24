@@ -88,7 +88,7 @@ export async function listMyThreads(): Promise<ThreadSummary[]> {
   const { data, error } = await supabase.rpc('list_my_threads');
   if (error) throw error;
   if (!data) return [];
-  return (data as RpcRow[]).map((r) => ({
+  return data.map((r) => ({
     threadId: r.thread_id,
     otherId: r.other_id,
     otherName: r.other_name,
@@ -190,17 +190,3 @@ export async function sendMessage(threadId: string, body: string): Promise<Messa
   };
 }
 
-type RpcRow = {
-  thread_id: string;
-  other_id: string;
-  other_name: string;
-  other_photo_url: string | null;
-  initiator_id: string;
-  opener_text: string | null;
-  accepted_at: string | null;
-  last_message_at: string;
-  message_count: number;
-  last_message_body: string | null;
-  last_message_from: string | null;
-  unread: boolean;
-};

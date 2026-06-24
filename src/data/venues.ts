@@ -28,7 +28,7 @@ export async function fetchNearbyVenues(
   });
   if (error) throw error;
   if (!data) return [];
-  return (data as RpcRow[]).map((r) => ({
+  return data.map((r) => ({
     id: r.id,
     name: r.name,
     category: r.category ?? null,
@@ -44,15 +44,3 @@ export async function fetchNearbyVenues(
       : null,
   }));
 }
-
-type RpcRow = {
-  id: string;
-  name: string;
-  category: string | null;
-  address: string | null;
-  distance_m: number;
-  post_id: string | null;
-  post_kind: string | null;
-  post_body: string | null;
-  post_ends_at: string | null;
-};
