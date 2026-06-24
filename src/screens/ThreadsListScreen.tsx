@@ -6,7 +6,6 @@ import {
   FlatList,
   RefreshControl,
   DeviceEventEmitter,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +13,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, spacing, radius, typography } from '../theme';
 import { listMyThreads, hideThread, type ThreadSummary } from '../storage/threads';
+import { showDialog } from '../components/AppDialog';
 import { subscribeToMyThreadChanges } from '../storage/realtime';
 import { currentUserId } from '../lib/session';
 import Avatar from '../components/Avatar';
@@ -75,7 +75,7 @@ export default function ThreadsListScreen() {
 
   const onRemove = useCallback(
     (threadId: string, name: string) => {
-      Alert.alert(
+      showDialog(
         'Remove conversation?',
         `This removes it from your messages. ${name} keeps their copy, and it comes back if either of you sends a new message.`,
         [

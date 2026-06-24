@@ -5,7 +5,6 @@ import {
   Pressable,
   StyleSheet,
   FlatList,
-  Alert,
   DeviceEventEmitter,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +14,7 @@ import { blockUser } from '../storage/blocks';
 import { track } from '../lib/analytics';
 import ReportUserModal from '../components/ReportUserModal';
 import LoadingScreen from '../components/LoadingScreen';
+import { showDialog } from '../components/AppDialog';
 import { colors, spacing, radius, typography } from '../theme';
 import {
   createOrGetThread,
@@ -96,7 +96,7 @@ export default function ChatScreen({ route, navigation }: Props) {
     const otherName = thread.otherName;
     const otherId = thread.otherId;
     const confirmBlock = () => {
-      Alert.alert(
+      showDialog(
         `Block ${otherName}?`,
         `You won't see ${otherName} in your nearby feed or messages, and they won't see you. This can be undone later.`,
         [
@@ -109,7 +109,7 @@ export default function ChatScreen({ route, navigation }: Props) {
               blockUser(otherId)
                 .then(() => DeviceEventEmitter.emit('blockChanged'))
                 .catch((e) => {
-                  Alert.alert(
+                  showDialog(
                     'Block failed',
                     e instanceof Error ? e.message : 'Try again.',
                   );
@@ -120,7 +120,7 @@ export default function ChatScreen({ route, navigation }: Props) {
       );
     };
     const openMenu = () => {
-      Alert.alert(otherName, undefined, [
+      showDialog(otherName, undefined, [
         { text: 'Report', onPress: () => setReportOpen(true) },
         { text: 'Block', style: 'destructive', onPress: confirmBlock },
         { text: 'Cancel', style: 'cancel' },
@@ -306,7 +306,7 @@ export default function ChatScreen({ route, navigation }: Props) {
         onCancel={() => setReportOpen(false)}
         onSubmitted={() => {
           setReportOpen(false);
-          Alert.alert(
+          showDialog(
             'Report submitted',
             'Thanks — we\'ll review it. You may want to block this person too.',
           );

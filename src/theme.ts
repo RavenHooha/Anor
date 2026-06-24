@@ -10,6 +10,8 @@ export const colors = {
   primaryDim: '#b34a25',
   secondary: '#e8756a',
   highlight: '#ffb347',
+  danger: '#ff5a52',
+  overlay: 'rgba(0,0,0,0.6)',
 } as const;
 
 export const spacing = {
