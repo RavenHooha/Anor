@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import type { EventSubscription } from 'react-native';
-import BleManager, { BleState } from 'react-native-ble-manager';
+import BleManager, { BleState, type AdvertisingData } from 'react-native-ble-manager';
 import BLEAdvertiser from 'react-native-ble-advertiser';
 import * as Sentry from '@sentry/react-native';
 import { track } from '../lib/analytics';
@@ -33,6 +33,30 @@ function rssiToSignal(rssi: number): SignalStrength {
   if (rssi >= -60) return 'strong';
   if (rssi >= -70) return 'medium';
   return 'weak';
+}
+
+// Is this advertisement one of ours? Identity lives in our self-generated
+// 128-bit service UUID (free, no Bluetooth-SIG registration needed). The
+// advertiser library also always emits manufacturer data under our company id,
+// so we accept that as a fallback — matching either AD field in JS is more
+// robust than a strict OS-level serviceUUIDs scan filter, which can miss the
+// marker depending on which field the library actually populates.
+function isAnorDevice(adv: AdvertisingData | undefined): boolean {
+  if (!adv) return false;
+  const uuids = adv.serviceUUIDs;
+  if (
+    Array.isArray(uuids) &&
+    uuids.some((u) => u?.toLowerCase() === ANOR_SERVICE_UUID.toLowerCase())
+  ) {
+    return true;
+  }
+  // Fallback: leading two bytes of the manufacturer data = company id (LE).
+  const bytes = adv.manufacturerRawData?.bytes;
+  if (Array.isArray(bytes) && bytes.length >= 2) {
+    const companyId = (bytes[0] ?? 0) | ((bytes[1] ?? 0) << 8);
+    if (companyId === ANOR_COMPANY_ID) return true;
+  }
+  return false;
 }
 
 function recordSample(id: string, rssi: number) {
@@ -73,7 +97,10 @@ export async function startBle(): Promise<void> {
     throw e;
   }
 
-  // Advertise: be discoverable as an Anor device.
+  // Advertise: be discoverable as an Anor device. Identity is the service UUID;
+  // setCompanyId is only required because the advertiser library mandates it
+  // (0xFFFF is the SIG test id — see constants.ts). Discovery does not depend on
+  // a registered company id.
   try {
     BLEAdvertiser.setCompanyId(ANOR_COMPANY_ID);
     await BLEAdvertiser.broadcast(ANOR_SERVICE_UUID, [], {
@@ -93,14 +120,19 @@ export async function startBle(): Promise<void> {
   }
 
   // Scan: listen for other Anor devices via ble-manager's typed event helper.
+  // Match our marker in JS (see isAnorDevice) rather than filtering by service
+  // UUID at the OS level, which can silently match nothing if the advertiser
+  // surfaced the UUID somewhere the filter doesn't inspect.
   scanSubscription = BleManager.onDiscoverPeripheral((data) => {
     if (typeof data?.rssi !== 'number' || !data?.id) return;
+    if (!isAnorDevice(data.advertising)) return;
     recordSample(data.id, data.rssi);
   });
 
-  // seconds=0 = scan until stopScan(); allowDuplicates so RSSI updates flow per peripheral (iOS only flag, harmless on Android)
+  // seconds=0 = scan until stopScan(); allowDuplicates so RSSI updates flow per
+  // peripheral. No serviceUUIDs filter — we match in the callback instead.
   await BleManager.scan({
-    serviceUUIDs: [ANOR_SERVICE_UUID],
+    serviceUUIDs: [],
     seconds: 0,
     allowDuplicates: true,
   });
