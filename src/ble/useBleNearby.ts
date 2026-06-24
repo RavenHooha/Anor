@@ -8,6 +8,7 @@ import {
   type BleNearbyDevice,
 } from './service';
 import { requestBlePermissions, type BlePermissionsResult } from './permissions';
+import { getBleBackgroundPref } from './backgroundPref';
 
 export type BleStatus =
   | 'idle'
@@ -107,9 +108,16 @@ export function useBleNearby(): {
 
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'background') {
+        // Beta opt-in: keep BLE alive in the background (it survives only while
+        // a foreground service keeps the process up — i.e. discoverable mode).
+        // Default behaviour is still to stop on background.
         if (startedRef.current) {
-          stopBle().catch(() => {});
-          startedRef.current = false;
+          getBleBackgroundPref().then((keepAlive) => {
+            if (!keepAlive && startedRef.current) {
+              stopBle().catch(() => {});
+              startedRef.current = false;
+            }
+          });
         }
       } else if (state === 'active' && !startedRef.current) {
         begin();

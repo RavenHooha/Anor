@@ -9,6 +9,7 @@ import {
   Alert,
   Linking,
   Share,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -23,7 +24,7 @@ import {
   exportMyData,
   type Profile,
 } from '../storage/profile';
-import { setAnalyticsOptedIn as setAnalyticsOptedInClient } from '../lib/analytics';
+import { setAnalyticsOptedIn as setAnalyticsOptedInClient, track } from '../lib/analytics';
 import { supabase } from '../lib/supabase';
 import { TOS_URL, PRIVACY_POLICY_URL, supportMailto } from '../lib/links';
 import {
@@ -37,6 +38,7 @@ import {
   type BgBreadcrumb,
   type LastBgRun,
 } from '../location/backgroundPresence';
+import { getBleBackgroundPref, setBleBackgroundPref } from '../ble/backgroundPref';
 import type { RootStackParamList } from '../navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -57,6 +59,8 @@ export default function SettingsScreen() {
   const [exporting, setExporting] = useState(false);
   const [discoverable, setDiscoverable] = useState(false);
   const [savingDiscoverable, setSavingDiscoverable] = useState(false);
+  const [bleBackground, setBleBackground] = useState(false);
+  const [savingBleBackground, setSavingBleBackground] = useState(false);
   const [crumb, setCrumb] = useState<BgBreadcrumb | null>(null);
   const [lastBg, setLastBg] = useState<LastBgRun | null>(null);
   const [checking, setChecking] = useState(false);
@@ -79,6 +83,7 @@ export default function SettingsScreen() {
     useCallback(() => {
       getMyProfile().then(setProfile);
       getDiscoverablePref().then(setDiscoverable);
+      getBleBackgroundPref().then(setBleBackground);
 
       // Live, read-only poll so the breadcrumb + last-background-ping reflect
       // reality without tapping (tapping would mutate the very thing we watch).
@@ -118,6 +123,20 @@ export default function SettingsScreen() {
     } finally {
       setSavingDiscoverable(false);
       getBgBreadcrumb().then(setCrumb);
+    }
+  };
+
+  const onToggleBleBackground = async (next: boolean) => {
+    if (savingBleBackground) return;
+    setSavingBleBackground(true);
+    setBleBackground(next);
+    try {
+      await setBleBackgroundPref(next);
+      track('ble_background_toggled', { on: next });
+    } catch {
+      setBleBackground(!next);
+    } finally {
+      setSavingBleBackground(false);
     }
   };
 
@@ -278,6 +297,27 @@ export default function SettingsScreen() {
               {checking ? 'checking…' : 'tap to check in now'}
             </Text>
           </Pressable>
+        )}
+
+        {Platform.OS === 'android' && (
+          <View style={styles.toggleRow}>
+            <View style={styles.toggleText}>
+              <Text style={styles.linkLabel}>Bluetooth proximity (beta)</Text>
+              <Text style={styles.toggleHint}>
+                Spot people in the same room over Bluetooth, even while Anor is in
+                the background. Android-only and experimental — it uses extra
+                battery and won't catch everyone. Works best with “Let nearby
+                people find me” on.
+              </Text>
+            </View>
+            <Switch
+              value={bleBackground}
+              onValueChange={onToggleBleBackground}
+              disabled={savingBleBackground}
+              trackColor={{ false: colors.surfaceElevated, true: colors.primary }}
+              thumbColor={colors.textPrimary}
+            />
+          </View>
         )}
 
         <Text style={styles.sectionLabel}>Safety</Text>
