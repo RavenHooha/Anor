@@ -44,7 +44,12 @@ export default function VenuesNearby({ venues }: { venues: NearbyVenue[] }) {
       byCat.set(c, arr);
     }
     const order = activeFilter ? [activeFilter] : categories;
-    return order.map((c) => ({ category: c, venues: byCat.get(c) ?? [] }));
+    return order.map((c) => ({
+      category: c,
+      // Alphabetical within each category (the server already selected the
+      // nearest venues; this just orders them for display).
+      venues: (byCat.get(c) ?? []).slice().sort((a, b) => a.name.localeCompare(b.name)),
+    }));
   }, [venues, categories, activeFilter]);
 
   return (
